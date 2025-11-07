@@ -23,7 +23,6 @@ struct IssueFields {
     project: Project,
     summary: String,
     issuetype: IssueType,
-    labels: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,7 +73,6 @@ impl JiraClient {
                 issuetype: IssueType {
                     id: STORY_ISSUE_TYPE.to_string(),
                 },
-                labels: vec!["bobby".to_string()],
             },
         };
 
