@@ -8,42 +8,54 @@ use tracing::warn;
 pub async fn handle_command(
     cmd: InfoCommand,
     client: &JiraClient,
-    config: &ResolvedConfig,
+    _config: &ResolvedConfig,
 ) -> Result<(), AppError> {
     use crate::cli::InfoSubCommand::*;
 
     match cmd.subcmd {
         Project { key } => {
-            warn!("TODO: implement");
-            // Placeholder: Replace with actual API call
-            // let metadata = client.get_project_metadata(&key).await?;
-            // print_output(&metadata, cmd.json)?;
+            let project = client.get_project(key).await?;
+            print_output(&project, cmd.json)?;
         }
-        Epics { key } => {
-            warn!("TODO: implement");
-            // Placeholder: Replace with actual API call
-            // println!(
-            //     "Fetching epics for project '{}'. This will be implemented next.",
-            //     key
-            // );
-            // let epics = client.get_project_epics(&key).await?;
-            // print_output(&epics, cmd.json)?;
+        Epics {
+            project_key: _,
+            board_id: _,
+        } => {
+            warn!("TODO: implement this.")
+            // if let Some(board_id) = board_id {
+            //     let epics = client.get_epics_by_board(board_id).await?;
+            //     print_output(epics, cmd.json)?;
+            // } else if let Some(project_key) = project_key {
+            //     let boards = client.get_boards_by_project(&project_key).await?;
+            //     if boards.is_empty() {
+            //         warn!("No boards found for project '{}'", project_key);
+            //         return Ok(());
+            //     }
+
+            //     for board in boards {
+            //         println!("Epics for board: {} ({})", board.name, board.id);
+            //         let epics = client.get_epics_by_board(board.id).await?;
+            //         print_output(epics, cmd.json)?;
+            //     }
+            // }
         }
-        Ticket { key } => {
-            warn!("TODO: implement");
-            // Placeholder: Replace with actual API call
-            // let issue = client.get_issue(&key).await?;
-            // print_output(&issue, cmd.json)?;
+        Ticket { key: _ } => {
+            warn!("TODO: implement this.")
+            // let ticket = client.get_ticket(&key).await?;
+            // print_output(ticket, cmd.json)?;
         }
-        Boards { project } => {
-            warn!("TODO: implement");
-            // Placeholder: Replace with actual API call
-            // println!(
-            //     "Fetching boards (project: {:?}). This will be implemented next.",
-            //     project
-            // );
+        Boards { project: _ } => {
+            warn!("TODO: implement this.")
             // let boards = client.get_boards(project.as_deref()).await?;
-            // print_output(&boards, cmd.json)?;
+            // print_output(boards, cmd.json)?;
+        }
+        Fields {
+            project_key: _,
+            issue_type: _,
+        } => {
+            warn!("TODO: implement this.")
+            // let fields = client.get_fields(&project_key, &issue_type).await?;
+            // print_output(fields, cmd.json)?;
         }
     }
 

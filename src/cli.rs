@@ -64,8 +64,7 @@ pub enum InfoSubCommand {
     /// Displays available issue types, components, and versions.
     Project {
         /// The project key (e.g., "KAN").
-        #[arg(required = true)]
-        key: String,
+        key: Option<String>,
     },
 
     /// List epics for a given board or project.
@@ -73,8 +72,11 @@ pub enum InfoSubCommand {
     /// Helps find the correct epic ID to link new stories to.
     Epics {
         /// The project key to find epics for.
-        #[arg(required = true)]
-        key: String,
+        #[arg(long, required_unless_present = "board_id")]
+        project_key: Option<String>,
+        /// The board ID to find epics for.
+        #[arg(long, required_unless_present = "project_key")]
+        board_id: Option<u64>,
     },
 
     /// Inspect the raw JSON data of an existing ticket.
@@ -93,6 +95,17 @@ pub enum InfoSubCommand {
         /// Optionally filter boards by a project key.
         #[arg(long)]
         project: Option<String>,
+    },
+    /// Fetch metadata about the fields for a given issue type in a project.
+    ///
+    /// Displays available fields, whether they are required, and their types.
+    Fields {
+        /// The project key (e.g., "KAN").
+        #[arg(long, required = true)]
+        project_key: String,
+        /// The ID of the issue type.
+        #[arg(long, required = true)]
+        issue_type: String,
     },
 }
 

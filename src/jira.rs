@@ -11,6 +11,9 @@ pub enum JiraError {
 
     #[error("Failed to create ticket: {0}")]
     CreateTicket(String),
+
+    #[error("Failed to get project: {0}")]
+    GetProject(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -44,6 +47,39 @@ pub struct TicketInfo {
     pub key: String,
     #[allow(dead_code)]
     pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JiraProject {
+    pub id: String,
+    pub key: String,
+    pub name: String,
+    #[serde(rename = "issueTypes")]
+    pub issue_types: Vec<IssueType>,
+    pub components: Vec<Component>,
+    pub versions: Vec<Version>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IssueType {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    #[serde(rename = "subtask")]
+    pub is_subtask: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Component {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Version {
+    pub id: String,
+    pub name: String,
+    pub released: bool,
 }
 
 impl JiraClient {
@@ -123,5 +159,37 @@ impl JiraClient {
             key: create_response.key,
             url: create_response.self_url,
         })
+    }
+
+    pub async fn get_project(&self, project_key: Option<String>) -> Result<JiraProject, JiraError> {
+        let project_key = project_key
+            .or_else(|| Some(self.project_key.clone()))
+            .ok_or_else(|| {
+                JiraError::GetProject(
+                    "Missing project key from input or loaded configuration.".to_string(),
+                )
+            })?;
+
+        let response = self
+            .client
+            .get(format!(
+                "{}/rest/api/3/project/{}",
+                self.base_url, project_key
+            ))
+            .basic_auth(&self.email, Some(&self.api_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(JiraError::GetProject(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        let project = response.json::<JiraProject>().await?;
+        Ok(project)
     }
 }
