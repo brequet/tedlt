@@ -62,7 +62,6 @@ pub enum InfoSubCommand {
     /// Fetch metadata for a specific project.
     ///
     /// Displays available issue types, components, and versions.
-    /// This is the most essential command for configuring profiles.
     Project {
         /// The project key (e.g., "KAN").
         #[arg(required = true)]
@@ -80,7 +79,7 @@ pub enum InfoSubCommand {
 
     /// Inspect the raw JSON data of an existing ticket.
     ///
-    /// Extremely useful for reverse-engineering field names and values.
+    /// Useful for reverse-engineering field names and values.
     Ticket {
         /// The ticket key (e.g., "KAN-123").
         #[arg(required = true)]
@@ -89,7 +88,7 @@ pub enum InfoSubCommand {
 
     /// List all available boards.
     ///
-    /// Useful for finding board IDs required by certain Jira Agile APIs.
+    /// Useful for finding board IDs required by certain Jira APIs.
     Boards {
         /// Optionally filter boards by a project key.
         #[arg(long)]
