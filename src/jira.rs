@@ -60,11 +60,17 @@ impl JiraClient {
     pub async fn create_ticket(
         &self,
         title: &str,
-        additional_fields: Option<Value>, // directly use this in fields if not none, like an union between fields and additional_fields (merge both)
+        additional_fields: Option<Value>,
     ) -> Result<TicketInfo, JiraError> {
         let url = format!("{}/rest/api/3/issue", self.base_url);
 
-        // TODO: info! log url and project_key
+        debug!(
+            r#"Creating Jira issue:
+            - Jira instance: {}
+            - Project key: {}
+            "#,
+            self.base_url, self.project_key
+        );
 
         let base_fields = IssueFields {
             project: Project {
