@@ -43,3 +43,18 @@ curl 'https://lateamrock.atlassian.net/rest/api/3/issue?updateHistory=true&apply
   -H 'TE: trailers' \
   --data-raw $'{"fields":{"project":{"id":"10528"},"issuetype":{"id":"10004"},"summary":"Missing redirection without trailing slash","customfield_10020":3224,"versions":[{"id":"12594"}],"fixVersions":[{"id":"12594"}],"description":{"version":1,"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"With or without authentication, accessing sam-demonstrator without trailing slash is not working."},{"type":"hardBreak"},{"type":"hardBreak"},{"type":"text","text":"- "},{"type":"text","text":"https://frl205143-vm/sam-demonstrator/","marks":[{"type":"code"}]},{"type":"text","text":" \u2192 OK"}]},{"type":"paragraph","content":[{"type":"text","text":"- "},{"type":"text","text":"https://frl205143-vm/sam-demonstrator","marks":[{"type":"code"}]},{"type":"text","text":" \u2192 KO, timeout and http:// redirection"}]}]},"parent":{"id":"116727"},"components":[{"id":"10998","name":"SAM Demonstrator"}],"reporter":{"id":"712020:150e46dc-b6bc-4b66-bc21-f05714f93e3d"},"priority":{"id":"10001","name":"Not prioritized","iconUrl":"https://lateamrock.atlassian.net/images/icons/priorities/trivial.svg"},"labels":[]},"update":{},"externalToken":"0.621074196882546"}'
   ```
+
+
+fetch board main info
+```sh
+curl -u "${env:JIRA_EMAIL}:${env:JIRA_API_TOKEN}" "https://requet.atlassian.net/rest/agile/1.0/board?projectKeyOrId=KAN" -H "Accept: application/json"
+```
+
+fetch epics
+```sh
+curl -u "${env:JIRA_EMAIL}:${env:JIRA_API_TOKEN}" "https://requet.atlassian.net/rest/agile/1.0/board/1/epic" -H "Accept: application/json"
+```
+fetch project meta data (issues types, bug etc id)
+```sh
+curl -u "${env:JIRA_EMAIL}:${env:JIRA_API_TOKEN}" "https://requet.atlassian.net/rest/api/3/project/KAN" -H "Accept: application/json"
+```

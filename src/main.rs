@@ -1,4 +1,4 @@
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
@@ -7,7 +7,7 @@ mod env;
 mod jira;
 
 use cli::Args;
-use config::Config;
+use config::{CliOverrides, ConfigFile};
 use env::Credentials;
 use jira::JiraClient;
 
@@ -36,30 +36,25 @@ async fn run() -> Result<(), AppError> {
 
     let args = Args::parse_args();
 
-    let config_path = dirs::home_dir()
-        .ok_or_else(|| config::ConfigError::NoHomeDir)?
-        .join("tedlt.toml");
+    let config_file = ConfigFile::load_from_home()?;
 
-    let config_exists = config_path.exists();
-    let config = Config::load()?;
+    let cli_overrides = CliOverrides {
+        jira_url: args.jira_url,
+        project_key: args.project_key,
+    };
 
-    if !config_exists {
-        warn!(
-            "📝 Please edit your configuration file at: {}",
-            config_path.display()
-        );
-        warn!("   Update jira_url and project_key with your Jira settings");
-        info!("Configuration file created. Please edit it first.");
-        return Ok(());
-    }
+    let resolved_config = config_file.resolve(args.profile, cli_overrides)?;
 
     let credentials = Credentials::load()?;
 
-    info!("Creating Jira ticket in project: {}", config.project_key);
+    info!(
+        "Creating Jira ticket in project: {}",
+        resolved_config.project_key
+    );
 
     let client = JiraClient::new(
-        config.jira_url.clone(),
-        config.project_key,
+        resolved_config.jira_url.clone(),
+        resolved_config.project_key,
         credentials.api_token,
         credentials.email,
     );
@@ -67,7 +62,7 @@ async fn run() -> Result<(), AppError> {
     let ticket = client.create_ticket(&args.title).await?;
 
     info!("Ticket created successfully:");
-    println!("{}/browse/{}", config.jira_url, ticket.key);
+    println!("{}/browse/{}", resolved_config.jira_url, ticket.key);
 
     Ok(())
 }

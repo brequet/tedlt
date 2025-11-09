@@ -1,5 +1,0 @@
-# Jira workspace URL (without trailing slash)
-jira_url = "https://requet.atlassian.net"
-
-# Project key to create tickets in
-project_key = "KAN"

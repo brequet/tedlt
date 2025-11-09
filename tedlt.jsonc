@@ -1,0 +1,53 @@
+{
+  "jira_url": "https://requet.atlassian.net",
+  "project_key": "KAN",
+  "variables": {
+    "issueTypes": {
+      "epic": "10001",
+      "subtask": "10002",
+      "task": "10003",
+      "story": "10004",
+      "bug": "10005"
+    }
+  },
+  "profiles": {
+    "default": {
+      "fields": {
+        "issuetype": { "id": "${issueTypes.task}" }
+      }
+    },
+    "ext": {
+      "inherits": "default",
+      "jira_url": "https://ext.atlassian.net",
+      "project_key": "EXT",
+      "fields": {
+        "project": {
+          "id": "10528"
+        },
+        "issuetype": {
+          "id": "${issueTypes.story}"
+        },
+        "customfield_10020": 3224, // This custom type fields holds the project phase
+        "versions": [
+          {
+            "id": "12594"
+          }
+        ],
+        "fixVersions": [
+          {
+            "id": "12594"
+          }
+        ],
+        "parent": {
+          "id": "116727"
+        },
+        "components": [
+          {
+            "id": "10998",
+            "name": "EXT Component"
+          }
+        ]
+      }
+    }
+  }
+}
