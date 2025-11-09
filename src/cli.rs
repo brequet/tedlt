@@ -1,27 +1,104 @@
-use clap::{ArgAction, Parser};
+use clap::{Parser, Subcommand};
 
+/// A CLI tool to interact with Jira and create tickets efficiently.
 #[derive(Parser, Debug)]
-#[command(name = "tedlt")]
-#[command(about = "Create Jira tickets from the command line", long_about = None)]
+#[command(author, version, about, long_about = None)]
 pub struct Args {
-    #[arg(help = "The title of the Jira ticket to create")]
-    pub title: String,
+    /// Enable verbose logging.
+    #[arg(short, long, global = true, default_value_t = false)]
+    pub verbose: bool,
 
-    #[arg(short, long)]
-    pub profile: Option<String>,
-
-    #[arg(long)]
+    /// Override the Jira URL from the config file.
+    #[arg(long, global = true)]
     pub jira_url: Option<String>,
 
-    #[arg(long)]
+    /// Override the project key from the config file or profile.
+    #[arg(long, global = true)]
     pub project_key: Option<String>,
 
-    #[arg(short, long, action = ArgAction::SetTrue)]
-    pub verbose: bool,
+    #[command(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    /// Create a new Jira ticket.
+    Create(CreateCommand),
+
+    /// Discover Jira metadata for projects, epics, and more.
+    #[command(alias = "discover")]
+    Info(InfoCommand),
+}
+
+/// Arguments for the 'create' command.
+#[derive(Parser, Debug)]
+pub struct CreateCommand {
+    /// The title of the ticket to create.
+    #[arg(required = true)]
+    pub title: String,
+
+    /// The name of the profile to use for creating the ticket.
+    #[arg(short, long)]
+    pub profile: Option<String>,
+}
+
+/// Arguments for the 'info' command.
+#[derive(Parser, Debug)]
+pub struct InfoCommand {
+    #[command(subcommand)]
+    pub subcmd: InfoSubCommand,
+
+    /// The name of the profile to use for context (e.g., project key).
+    #[arg(long, global = true)]
+    pub profile: Option<String>,
+
+    /// Output the result in raw JSON format.
+    #[arg(long, global = true)]
+    pub json: bool,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum InfoSubCommand {
+    /// Fetch metadata for a specific project.
+    ///
+    /// Displays available issue types, components, and versions.
+    /// This is the most essential command for configuring profiles.
+    Project {
+        /// The project key (e.g., "KAN").
+        #[arg(required = true)]
+        key: String,
+    },
+
+    /// List epics for a given board or project.
+    ///
+    /// Helps find the correct epic ID to link new stories to.
+    Epics {
+        /// The project key to find epics for.
+        #[arg(required = true)]
+        key: String,
+    },
+
+    /// Inspect the raw JSON data of an existing ticket.
+    ///
+    /// Extremely useful for reverse-engineering field names and values.
+    Ticket {
+        /// The ticket key (e.g., "KAN-123").
+        #[arg(required = true)]
+        key: String,
+    },
+
+    /// List all available boards.
+    ///
+    /// Useful for finding board IDs required by certain Jira Agile APIs.
+    Boards {
+        /// Optionally filter boards by a project key.
+        #[arg(long)]
+        project: Option<String>,
+    },
 }
 
 impl Args {
     pub fn parse_args() -> Self {
-        Self::parse()
+        Parser::parse()
     }
 }

@@ -21,7 +21,7 @@ impl ResolvedConfig {
     pub fn build(
         file: &ConfigFile,
         cli: CliOverrides,
-        profile_name: Option<String>,
+        profile_name: Option<&str>,
     ) -> Result<Self, ConfigError> {
         let profile = Self::resolve_profile(&file.profiles, profile_name)?;
 
@@ -55,9 +55,9 @@ impl ResolvedConfig {
 
     fn resolve_profile(
         profiles: &HashMap<String, ProfileDef>,
-        profile_name: Option<String>,
+        profile_name: Option<&str>,
     ) -> Result<Option<ProfileDef>, ConfigError> {
-        match (profiles.is_empty(), profile_name.as_deref()) {
+        match (profiles.is_empty(), profile_name) {
             (true, None) => Ok(None),
             (true, Some(name)) => Err(ConfigError::ProfileNotFound(name.to_string())),
             (false, None) => match profiles.get(DEFAULT_PROFILE) {

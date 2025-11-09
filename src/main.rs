@@ -1,7 +1,8 @@
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
+mod commands;
 mod config;
 mod env;
 mod jira;
@@ -21,28 +22,37 @@ enum AppError {
 
     #[error("Jira API error: {0}")]
     Jira(#[from] jira::JiraError),
+
+    #[error("JSON serialization/deserialization error: {0}")]
+    Json(String),
 }
 
 #[tokio::main]
 async fn main() {
-    if let Err(e) = run().await {
+    let args = Args::parse_args();
+    init_tracing(args.verbose);
+
+    if let Err(e) = run(args).await {
         error!("{}", e);
         std::process::exit(1);
     }
 }
 
-async fn run() -> Result<(), AppError> {
-    let args = Args::parse_args();
-
-    init_tracing(args.verbose);
-
+async fn run(args: Args) -> Result<(), AppError> {
+    let config_file = ConfigFile::load()?;
     let cli_overrides = CliOverrides {
         jira_url: args.jira_url,
         project_key: args.project_key,
     };
 
-    let config_file = ConfigFile::load()?;
-    let resolved_config = config_file.resolve(args.profile, cli_overrides)?;
+    let profile_name = match &args.command {
+        cli::Commands::Create(cmd) => cmd.profile.as_deref(),
+        cli::Commands::Info(cmd) => cmd.profile.as_deref(),
+    };
+
+    let resolved_config = config_file.resolve(profile_name, cli_overrides)?;
+
+    debug!("Resolved configuration: {:?}", resolved_config);
 
     let credentials = Credentials::load()?;
 
@@ -53,12 +63,12 @@ async fn run() -> Result<(), AppError> {
         credentials.email,
     );
 
-    let ticket = client
-        .create_ticket(&args.title, resolved_config.fields)
-        .await?;
-
-    info!("Ticket created successfully:");
-    println!("{}/browse/{}", resolved_config.jira_url, ticket.key);
+    match args.command {
+        cli::Commands::Create(cmd) => {
+            commands::create::handle_command(cmd, &client, &resolved_config).await?
+        }
+        cli::Commands::Info(cmd) => commands::info::handle_command(cmd, &client).await?,
+    }
 
     Ok(())
 }

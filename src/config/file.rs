@@ -49,7 +49,7 @@ impl ConfigFile {
 
     pub fn resolve(
         &self,
-        profile_name: Option<String>,
+        profile_name: Option<&str>,
         cli_overrides: CliOverrides,
     ) -> Result<ResolvedConfig, ConfigError> {
         ResolvedConfig::build(self, cli_overrides, profile_name)

@@ -6,6 +6,7 @@ mod value_resolver;
 
 pub use error::ConfigError;
 pub use file::ConfigFile;
+pub use resolved::ResolvedConfig;
 
 #[derive(Debug, Default, Clone)]
 pub struct CliOverrides {
