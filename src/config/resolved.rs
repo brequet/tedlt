@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serde_json::Value;
+use tracing::info;
 
 use super::{
     CliOverrides, ConfigError, ConfigFile, file::ProfileDef,
@@ -60,11 +61,17 @@ impl ResolvedConfig {
             (true, None) => Ok(None),
             (true, Some(name)) => Err(ConfigError::ProfileNotFound(name.to_string())),
             (false, None) => match profiles.get(DEFAULT_PROFILE) {
-                Some(default_profile) => Ok(Some(default_profile.clone())),
+                Some(default_profile) => {
+                    info!("Using profile '{}'", DEFAULT_PROFILE);
+                    Ok(Some(default_profile.clone()))
+                }
                 None => Ok(None),
             },
             (false, Some(profile_name_str)) => match profiles.get(profile_name_str) {
-                Some(profile) => Ok(Some(profile.clone())),
+                Some(profile) => {
+                    info!("Using profile '{}'", profile_name_str);
+                    Ok(Some(profile.clone()))
+                }
                 None => Err(ConfigError::ProfileNotFound(profile_name_str.to_string())),
             },
         }

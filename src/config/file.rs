@@ -22,18 +22,29 @@ pub struct ProfileDef {
     pub fields: Option<Value>,
 }
 
+const CONFIG_FILE_NAME: &str = "tedlt.jsonc";
+
 impl ConfigFile {
     pub fn from_str(content: &str) -> Result<Self, ConfigError> {
         json5::from_str(content).map_err(|e| ConfigError::Parse(e.to_string()))
     }
 
-    pub fn load_from_home() -> Result<Self, ConfigError> {
-        let path = dirs::home_dir()
+    pub fn load() -> Result<Self, ConfigError> {
+        let cwd_path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
+        if cwd_path.exists() {
+            let content = std::fs::read_to_string(cwd_path)?;
+            return Self::from_str(&content);
+        }
+
+        let home_path = dirs::home_dir()
             .ok_or(ConfigError::NoHomeDir)?
             .join("tedlt.jsonc");
+        if home_path.exists() {
+            let content = std::fs::read_to_string(home_path)?;
+            return Self::from_str(&content);
+        }
 
-        let content = std::fs::read_to_string(path)?;
-        Self::from_str(&content)
+        Err(ConfigError::NotFound)
     }
 
     pub fn resolve(

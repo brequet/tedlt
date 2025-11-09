@@ -1,4 +1,4 @@
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
@@ -32,34 +32,30 @@ async fn main() {
 }
 
 async fn run() -> Result<(), AppError> {
-    init_tracing();
-
     let args = Args::parse_args();
 
-    let config_file = ConfigFile::load_from_home()?;
+    init_tracing(args.verbose);
 
     let cli_overrides = CliOverrides {
         jira_url: args.jira_url,
         project_key: args.project_key,
     };
 
+    let config_file = ConfigFile::load()?;
     let resolved_config = config_file.resolve(args.profile, cli_overrides)?;
 
     let credentials = Credentials::load()?;
 
-    info!(
-        "Creating Jira ticket in project: {}",
-        resolved_config.project_key
-    );
-
     let client = JiraClient::new(
         resolved_config.jira_url.clone(),
-        resolved_config.project_key,
+        resolved_config.project_key.clone(),
         credentials.api_token,
         credentials.email,
     );
 
-    let ticket = client.create_ticket(&args.title).await?;
+    let ticket = client
+        .create_ticket(&args.title, resolved_config.fields)
+        .await?;
 
     info!("Ticket created successfully:");
     println!("{}/browse/{}", resolved_config.jira_url, ticket.key);
@@ -67,12 +63,17 @@ async fn run() -> Result<(), AppError> {
     Ok(())
 }
 
-fn init_tracing() {
+fn init_tracing(verbose: bool) {
+    let default_log_level = if verbose { "debug" } else { "info" };
+
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(format!("tedlt={}", default_log_level)));
+
     tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
+        .with_env_filter(env_filter)
         .with_target(false)
         .without_time()
         .init();
+
+    debug!("Verbose logging enabled.");
 }

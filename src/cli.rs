@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 #[derive(Parser, Debug)]
 #[command(name = "tedlt")]
@@ -15,6 +15,9 @@ pub struct Args {
 
     #[arg(long)]
     pub project_key: Option<String>,
+
+    #[arg(short, long, action = ArgAction::SetTrue)]
+    pub verbose: bool,
 }
 
 impl Args {

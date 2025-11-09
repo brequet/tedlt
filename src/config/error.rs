@@ -10,6 +10,10 @@ pub enum ConfigError {
 
     #[error("Failed to get home directory")]
     NoHomeDir,
+    #[error(
+        "Configuration file not found. Looking for 'tedlt.jsonc' in current or home directory."
+    )]
+    NotFound,
 
     #[error("Missing required field: {0}")]
     MissingField(String),

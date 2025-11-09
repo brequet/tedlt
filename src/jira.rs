@@ -1,8 +1,8 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 use thiserror::Error;
-
-const STORY_ISSUE_TYPE: &str = "10004";
+use tracing::debug;
 
 #[derive(Error, Debug)]
 pub enum JiraError {
@@ -14,25 +14,14 @@ pub enum JiraError {
 }
 
 #[derive(Debug, Serialize)]
-struct CreateIssueRequest {
-    fields: IssueFields,
-}
-
-#[derive(Debug, Serialize)]
 struct IssueFields {
     project: Project,
     summary: String,
-    issuetype: IssueType,
 }
 
 #[derive(Debug, Serialize)]
 struct Project {
     key: String,
-}
-
-#[derive(Debug, Serialize)]
-struct IssueType {
-    id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,6 +39,13 @@ pub struct JiraClient {
     email: String,
 }
 
+#[derive(Debug)]
+pub struct TicketInfo {
+    pub key: String,
+    #[allow(dead_code)]
+    pub url: String,
+}
+
 impl JiraClient {
     pub fn new(base_url: String, project_key: String, api_token: String, email: String) -> Self {
         Self {
@@ -61,20 +57,40 @@ impl JiraClient {
         }
     }
 
-    pub async fn create_ticket(&self, title: &str) -> Result<TicketInfo, JiraError> {
+    pub async fn create_ticket(
+        &self,
+        title: &str,
+        additional_fields: Option<Value>, // directly use this in fields if not none, like an union between fields and additional_fields (merge both)
+    ) -> Result<TicketInfo, JiraError> {
         let url = format!("{}/rest/api/3/issue", self.base_url);
 
-        let request = CreateIssueRequest {
-            fields: IssueFields {
-                project: Project {
-                    key: self.project_key.clone(),
-                },
-                summary: title.to_string(),
-                issuetype: IssueType {
-                    id: STORY_ISSUE_TYPE.to_string(),
-                },
+        // TODO: info! log url and project_key
+
+        let base_fields = IssueFields {
+            project: Project {
+                key: self.project_key.clone(),
             },
+            summary: title.to_string(),
         };
+
+        let mut fields_value = serde_json::to_value(base_fields).map_err(|e| {
+            JiraError::CreateTicket(format!("Failed to serialize base fields: {}", e))
+        })?;
+
+        if let Some(additional) = additional_fields {
+            if let (Some(fields_map), Some(additional_map)) =
+                (fields_value.as_object_mut(), additional.as_object())
+            {
+                fields_map.extend(additional_map.clone());
+            }
+        }
+
+        let request_body = json!({ "fields": fields_value });
+
+        debug!(
+            "Jira request body: {}",
+            serde_json::to_string_pretty(&request_body).unwrap_or_default()
+        );
 
         let response = self
             .client
@@ -82,7 +98,7 @@ impl JiraClient {
             .basic_auth(&self.email, Some(&self.api_token))
             .header("Accept", "application/json")
             .header("Content-Type", "application/json")
-            .json(&request)
+            .json(&request_body)
             .send()
             .await?;
 
@@ -102,11 +118,4 @@ impl JiraClient {
             url: create_response.self_url,
         })
     }
-}
-
-#[derive(Debug)]
-pub struct TicketInfo {
-    pub key: String,
-    #[allow(dead_code)]
-    pub url: String,
 }

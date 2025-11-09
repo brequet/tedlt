@@ -1,7 +1,7 @@
 {
   "jira_url": "https://requet.atlassian.net",
   "project_key": "KAN",
-  "variables": {
+  "properties": {
     "issueTypes": {
       "epic": "10001",
       "subtask": "10002",
@@ -13,7 +13,7 @@
   "profiles": {
     "default": {
       "fields": {
-        "issuetype": { "id": "${issueTypes.task}" }
+        "issuetype": { "id": "${issueTypes.bug}" }
       }
     },
     "ext": {
