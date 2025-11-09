@@ -1,5 +1,6 @@
 use crate::AppError;
 use crate::cli::InfoCommand;
+use crate::config::ResolvedConfig;
 use crate::jira::JiraClient;
 use serde::Serialize;
 use tracing::warn;
