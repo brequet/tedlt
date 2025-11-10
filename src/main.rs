@@ -1,3 +1,5 @@
+use std::io;
+
 use tracing::{debug, error};
 use tracing_subscriber::EnvFilter;
 
@@ -85,6 +87,7 @@ fn init_tracing(verbose: bool) {
         .with_env_filter(env_filter)
         .with_target(false)
         .without_time()
+        .with_writer(io::stderr)
         .init();
 
     debug!("Verbose logging enabled.");

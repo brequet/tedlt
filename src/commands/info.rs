@@ -17,6 +17,11 @@ pub async fn handle_command(
             let project = client.get_project(key).await?;
             print_output(&project, cmd.json)?;
         }
+        Ticket { key: _ } => {
+            warn!("TODO: implement this.")
+            // let ticket = client.get_ticket(&key).await?;
+            // print_output(ticket, cmd.json)?;
+        }
         Epics {
             project_key: _,
             board_id: _,
@@ -38,11 +43,6 @@ pub async fn handle_command(
             //         print_output(epics, cmd.json)?;
             //     }
             // }
-        }
-        Ticket { key: _ } => {
-            warn!("TODO: implement this.")
-            // let ticket = client.get_ticket(&key).await?;
-            // print_output(ticket, cmd.json)?;
         }
         Boards { project: _ } => {
             warn!("TODO: implement this.")
