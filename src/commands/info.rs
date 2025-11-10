@@ -1,15 +1,10 @@
 use crate::AppError;
 use crate::cli::InfoCommand;
-use crate::config::ResolvedConfig;
 use crate::jira::JiraClient;
 use serde::Serialize;
 use tracing::warn;
 
-pub async fn handle_command(
-    cmd: InfoCommand,
-    client: &JiraClient,
-    _config: &ResolvedConfig,
-) -> Result<(), AppError> {
+pub async fn handle_command(cmd: InfoCommand, client: &JiraClient) -> Result<(), AppError> {
     use crate::cli::InfoSubCommand::*;
 
     match cmd.subcmd {
@@ -22,31 +17,29 @@ pub async fn handle_command(
             print_output(&ticket)?;
         }
         Epics {
-            project_key: _,
-            board_id: _,
+            project_key,
+            board_id,
         } => {
-            warn!("TODO: implement this.")
-            // if let Some(board_id) = board_id {
-            //     let epics = client.get_epics_by_board(board_id).await?;
-            //     print_output(epics, cmd.json)?;
-            // } else if let Some(project_key) = project_key {
-            //     let boards = client.get_boards_by_project(&project_key).await?;
-            //     if boards.is_empty() {
-            //         warn!("No boards found for project '{}'", project_key);
-            //         return Ok(());
-            //     }
+            if let Some(board_id) = board_id {
+                let epics = client.get_epics_by_board(board_id).await?;
+                print_output(&epics)?;
+            } else {
+                let boards = client.get_boards(project_key.as_deref()).await?;
+                if boards.is_empty() {
+                    warn!("No boards found");
+                    return Ok(());
+                }
 
-            //     for board in boards {
-            //         println!("Epics for board: {} ({})", board.name, board.id);
-            //         let epics = client.get_epics_by_board(board.id).await?;
-            //         print_output(epics, cmd.json)?;
-            //     }
-            // }
+                for board in boards {
+                    println!("Epics for board: {} ({})", board.name, board.id);
+                    let epics = client.get_epics_by_board(board.id).await?;
+                    print_output(&epics)?;
+                }
+            }
         }
-        Boards { project: _ } => {
-            warn!("TODO: implement this.")
-            // let boards = client.get_boards(project.as_deref()).await?;
-            // print_output(boards, cmd.json)?;
+        Boards { project } => {
+            let boards = client.get_boards(project.as_deref()).await?;
+            print_output(&boards)?;
         }
         Fields {
             project_key: _,

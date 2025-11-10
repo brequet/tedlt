@@ -15,6 +15,12 @@ pub enum JiraError {
     #[error("Failed to get ticket: {0}")]
     GetTicket(String),
 
+    #[error("Failed to get epics: {0}")]
+    GetEpics(String),
+
+    #[error("Failed to get boards: {0}")]
+    GetBoard(String),
+
     #[error("Failed to get project: {0}")]
     GetProject(String),
 }
@@ -83,6 +89,31 @@ pub struct Version {
     pub id: String,
     pub name: String,
     pub released: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Epic {
+    pub id: u64,
+    pub key: String,
+    pub name: String,
+    pub summary: String,
+    pub done: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Board {
+    pub id: u64,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub board_type: String,
+    #[serde(rename = "location")]
+    pub project: Option<ProjectInfo>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProjectInfo {
+    #[serde(rename = "projectKey")]
+    pub project_key: String,
 }
 
 impl JiraClient {
@@ -215,5 +246,67 @@ impl JiraClient {
 
         let project = response.json::<Value>().await?;
         Ok(project)
+    }
+
+    pub async fn get_epics_by_board(&self, board_id: u64) -> Result<Vec<Epic>, JiraError> {
+        let response = self
+            .client
+            .get(format!(
+                "{}/rest/agile/1.0/board/{}/epic",
+                self.base_url, board_id
+            ))
+            .basic_auth(&self.email, Some(&self.api_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(JiraError::GetEpics(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct EpicResponse {
+            values: Vec<Epic>,
+        }
+
+        let epics = response.json::<EpicResponse>().await?;
+        Ok(epics.values)
+    }
+
+    pub async fn get_boards(&self, project_key: Option<&str>) -> Result<Vec<Board>, JiraError> {
+        let project_key = project_key.or_else(|| Some(self.project_key.as_ref()));
+
+        let mut url = format!("{}/rest/agile/1.0/board", self.base_url);
+        if let Some(key) = project_key {
+            url.push_str(&format!("?projectKeyOrId={}", key));
+        }
+
+        let response = self
+            .client
+            .get(url)
+            .basic_auth(&self.email, Some(&self.api_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(JiraError::GetBoard(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct BoardResponse {
+            values: Vec<Board>,
+        }
+
+        let boards = response.json::<BoardResponse>().await?;
+        Ok(boards.values)
     }
 }

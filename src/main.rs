@@ -69,9 +69,7 @@ async fn run(args: Args) -> Result<(), AppError> {
         cli::Commands::Create(cmd) => {
             commands::create::handle_command(cmd, &client, &resolved_config).await?
         }
-        cli::Commands::Info(cmd) => {
-            commands::info::handle_command(cmd, &client, &resolved_config).await?
-        }
+        cli::Commands::Info(cmd) => commands::info::handle_command(cmd, &client).await?,
     }
 
     Ok(())

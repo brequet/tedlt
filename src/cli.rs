@@ -68,10 +68,10 @@ pub enum InfoSubCommand {
     /// Helps find the correct epic ID to link new stories to.
     Epics {
         /// The project key to find epics for.
-        #[arg(long, required_unless_present = "board_id")]
+        #[arg(long)]
         project_key: Option<String>,
         /// The board ID to find epics for.
-        #[arg(long, required_unless_present = "project_key")]
+        #[arg(long)]
         board_id: Option<u64>,
     },
 
