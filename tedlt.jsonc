@@ -8,12 +8,39 @@
       "task": "10003",
       "story": "10004",
       "bug": "10005"
+    },
+    "bmx": {
+      "issueTypes": {
+        "story": "10001"
+      }
     }
   },
   "profiles": {
     "default": {
       "fields": {
         "issuetype": { "id": "${issueTypes.bug}" }
+      }
+    },
+    "sam-demo": {
+      "jira_url": "https://lateamrock.atlassian.net",
+      "project_key": "SAM",
+      "fields": {
+        "parent": {
+          "id": "116727" // SAM-9: Tools and Libraries
+        },
+        "fixVersions": [
+          {
+            "id": "12594" // Phase 1
+          }
+        ],
+        "components": [
+          {
+            "id": "10998" // SAM Demonstrator
+          }
+        ],
+        "issuetype": {
+          "id": "${bmx.issueTypes.story}"
+        }
       }
     },
     "ext": {
