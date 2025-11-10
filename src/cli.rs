@@ -51,10 +51,6 @@ pub struct InfoCommand {
     /// The name of the profile to use for context (e.g., project key).
     #[arg(long, global = true)]
     pub profile: Option<String>,
-
-    /// Output the result in raw JSON format.
-    #[arg(long, global = true)]
-    pub json: bool,
 }
 
 #[derive(Subcommand, Debug)]

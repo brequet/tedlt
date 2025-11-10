@@ -12,6 +12,9 @@ pub enum JiraError {
     #[error("Failed to create ticket: {0}")]
     CreateTicket(String),
 
+    #[error("Failed to get ticket: {0}")]
+    GetTicket(String),
+
     #[error("Failed to get project: {0}")]
     GetProject(String),
 }
@@ -190,6 +193,27 @@ impl JiraClient {
         }
 
         let project = response.json::<JiraProject>().await?;
+        Ok(project)
+    }
+
+    pub async fn get_ticket(&self, ticket_key: String) -> Result<Value, JiraError> {
+        let response = self
+            .client
+            .get(format!("{}/rest/api/3/issue/{}", self.base_url, ticket_key))
+            .basic_auth(&self.email, Some(&self.api_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(JiraError::GetTicket(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        let project = response.json::<Value>().await?;
         Ok(project)
     }
 }

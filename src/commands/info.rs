@@ -15,12 +15,11 @@ pub async fn handle_command(
     match cmd.subcmd {
         Project { key } => {
             let project = client.get_project(key).await?;
-            print_output(&project, cmd.json)?;
+            print_output(&project)?;
         }
-        Ticket { key: _ } => {
-            warn!("TODO: implement this.")
-            // let ticket = client.get_ticket(&key).await?;
-            // print_output(ticket, cmd.json)?;
+        Ticket { key } => {
+            let ticket = client.get_ticket(key).await?;
+            print_output(&ticket)?;
         }
         Epics {
             project_key: _,
@@ -62,25 +61,11 @@ pub async fn handle_command(
     Ok(())
 }
 
-/// Helper function to print data either as pretty-printed JSON or a
-/// human-readable format.
-///
-/// # Arguments
-///
-/// * `data` - The data to print, which must implement `Serialize`.
-/// * `is_json` - A boolean flag indicating whether to print as JSON.
-fn print_output<T>(data: &T, is_json: bool) -> Result<(), AppError>
+fn print_output<T>(data: &T) -> Result<(), AppError>
 where
     T: Serialize + ?Sized,
 {
-    if is_json {
-        let json = serde_json::to_string_pretty(data).map_err(|e| AppError::Json(e.to_string()))?;
-        println!("{}", json);
-    } else {
-        // In the future, we will add human-readable formatters here.
-        // For now, we default to JSON for simplicity.
-        let json = serde_json::to_string_pretty(data).map_err(|e| AppError::Json(e.to_string()))?;
-        println!("{}", json);
-    }
+    let json = serde_json::to_string_pretty(data).map_err(|e| AppError::Json(e.to_string()))?;
+    println!("{}", json);
     Ok(())
 }
