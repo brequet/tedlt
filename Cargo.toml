@@ -1,7 +1,8 @@
 [package]
 name = "tedlt"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+repository = "https://github.com/brequet/tedlt"
 
 [profile.release]
 strip = true          # Remove debug symbols
@@ -9,6 +10,11 @@ opt-level = "z"       # Optimize for size instead of speed
 lto = true            # Link-time optimization
 codegen-units = 1     # Better optimization (slower compile)
 panic = "abort"       # Remove unwinding code
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
 
 [dependencies]
 thiserror = "2.0.17"
