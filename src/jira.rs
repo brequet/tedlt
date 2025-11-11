@@ -21,6 +21,9 @@ pub enum JiraError {
     #[error("Failed to get boards: {0}")]
     GetBoard(String),
 
+    #[error("Failed to get fields: {0}")]
+    GetFields(String),
+
     #[error("Failed to get project: {0}")]
     GetProject(String),
 }
@@ -41,14 +44,6 @@ struct CreateIssueResponse {
     key: String,
     #[serde(rename = "self")]
     self_url: String,
-}
-
-pub struct JiraClient {
-    client: Client,
-    base_url: String,
-    project_key: String,
-    api_token: String,
-    email: String,
 }
 
 #[derive(Debug)]
@@ -114,6 +109,41 @@ pub struct Board {
 pub struct ProjectInfo {
     #[serde(rename = "projectKey")]
     pub project_key: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IssueTypeInfo {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub fields: std::collections::HashMap<String, FieldMeta>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FieldMeta {
+    pub required: bool,
+    pub name: String,
+    pub key: String,
+    #[serde(rename = "schema")]
+    pub field_type: FieldType,
+    #[serde(default)]
+    pub allowed_values: Vec<Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FieldType {
+    #[serde(rename = "type")]
+    pub type_name: String,
+    pub items: Option<String>,
+    pub custom: Option<String>,
+}
+
+pub struct JiraClient {
+    client: Client,
+    base_url: String,
+    project_key: String,
+    api_token: String,
+    email: String,
 }
 
 impl JiraClient {
@@ -308,5 +338,92 @@ impl JiraClient {
 
         let boards = response.json::<BoardResponse>().await?;
         Ok(boards.values)
+    }
+
+    pub async fn get_fields(
+        &self,
+        project_key: Option<String>,
+        issue_type_id: Option<String>,
+    ) -> Result<Vec<IssueTypeInfo>, JiraError> {
+        let project_key = project_key
+            .or_else(|| Some(self.project_key.clone()))
+            .ok_or_else(|| {
+                JiraError::GetFields(
+                    "Missing project key from input or loaded configuration.".to_string(),
+                )
+            })?;
+
+        let mut url = format!(
+            "{}/rest/api/2/issue/createmeta?projectKeys={}&expand=projects.issuetypes.fields",
+            self.base_url, project_key
+        );
+        if let Some(issue_type) = issue_type_id {
+            url.push_str(&format!("&issuetypeIds={}", issue_type));
+        }
+
+        let response = self
+            .client
+            .get(&url)
+            .basic_auth(&self.email, Some(&self.api_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(JiraError::GetFields(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct CreateMetaResponse {
+            projects: Vec<ProjectMeta>,
+        }
+
+        #[derive(Deserialize)]
+        struct ProjectMeta {
+            issuetypes: Vec<IssueTypeMeta>,
+        }
+
+        #[derive(Deserialize)]
+        struct IssueTypeMeta {
+            id: String,
+            name: String,
+            description: String,
+            fields: Value,
+        }
+
+        let create_meta = response.json::<CreateMetaResponse>().await?;
+
+        let first_project = create_meta
+            .projects
+            .into_iter()
+            .next()
+            .ok_or_else(|| JiraError::GetFields("No project found in response".to_string()))?;
+
+        let issue_types: Result<Vec<IssueTypeInfo>, JiraError> = first_project
+            .issuetypes
+            .into_iter()
+            .map(|issue_type_meta| {
+                let fields: std::collections::HashMap<String, FieldMeta> =
+                    serde_json::from_value(issue_type_meta.fields).map_err(|e| {
+                        JiraError::GetFields(format!(
+                            "Failed to deserialize fields for issue type '{}': {}",
+                            issue_type_meta.name, e
+                        ))
+                    })?;
+
+                Ok(IssueTypeInfo {
+                    id: issue_type_meta.id,
+                    name: issue_type_meta.name,
+                    description: issue_type_meta.description,
+                    fields,
+                })
+            })
+            .collect();
+
+        issue_types
     }
 }

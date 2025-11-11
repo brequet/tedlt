@@ -42,12 +42,11 @@ pub async fn handle_command(cmd: InfoCommand, client: &JiraClient) -> Result<(),
             print_output(&boards)?;
         }
         Fields {
-            project_key: _,
-            issue_type: _,
+            project_key,
+            issue_type,
         } => {
-            warn!("TODO: implement this.")
-            // let fields = client.get_fields(&project_key, &issue_type).await?;
-            // print_output(fields, cmd.json)?;
+            let fields = client.get_fields(project_key, issue_type).await?;
+            print_output(&fields)?;
         }
     }
 

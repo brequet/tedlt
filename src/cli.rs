@@ -97,11 +97,11 @@ pub enum InfoSubCommand {
     /// Displays available fields, whether they are required, and their types.
     Fields {
         /// The project key (e.g., "KAN").
-        #[arg(long, required = true)]
-        project_key: String,
+        #[arg(long)]
+        project_key: Option<String>,
         /// The ID of the issue type.
-        #[arg(long, required = true)]
-        issue_type: String,
+        #[arg(long)]
+        issue_type: Option<String>,
     },
 }
 
