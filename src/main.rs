@@ -50,6 +50,7 @@ async fn run(args: Args) -> Result<(), AppError> {
     let profile_names = match &args.command {
         cli::Commands::Create(cmd) => cmd.profile.as_slice(),
         cli::Commands::Info(cmd) => cmd.profile.as_slice(),
+        _ => &[],
     };
 
     let resolved_config = config_file.resolve(profile_names, cli_overrides)?;
@@ -70,6 +71,7 @@ async fn run(args: Args) -> Result<(), AppError> {
             commands::create::handle_command(cmd, &client, &resolved_config).await?
         }
         cli::Commands::Info(cmd) => commands::info::handle_command(cmd, &client).await?,
+        cli::Commands::Init => commands::init::handle_command().await?,
     }
 
     Ok(())

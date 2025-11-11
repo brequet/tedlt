@@ -37,6 +37,10 @@ pub enum Commands {
     /// Discover Jira metadata for projects, epics, and more.
     #[command(alias = "discover")]
     Info(InfoCommand),
+
+    /// Initialize the configuration file in the home directory.
+    #[command()]
+    Init,
 }
 
 /// Arguments for the 'create' command.
