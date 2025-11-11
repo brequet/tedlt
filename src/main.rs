@@ -27,6 +27,9 @@ enum AppError {
 
     #[error("JSON serialization/deserialization error: {0}")]
     Json(String),
+
+    #[error("IO error: {0}")]
+    Io(#[from] io::Error),
 }
 
 #[tokio::main]
@@ -71,7 +74,7 @@ async fn run(args: Args) -> Result<(), AppError> {
             commands::create::handle_command(cmd, &client, &resolved_config).await?
         }
         cli::Commands::Info(cmd) => commands::info::handle_command(cmd, &client).await?,
-        cli::Commands::Init => commands::init::handle_command().await?,
+        cli::Commands::Init(cmd) => commands::init::handle_command(cmd).await?,
     }
 
     Ok(())

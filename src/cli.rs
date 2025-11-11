@@ -40,7 +40,7 @@ pub enum Commands {
 
     /// Initialize the configuration file in the home directory.
     #[command()]
-    Init,
+    Init(InitCommand),
 }
 
 /// Arguments for the 'create' command.
@@ -118,6 +118,22 @@ pub enum InfoSubCommand {
         #[arg(long)]
         issue_type: Option<String>,
     },
+}
+
+/// Arguments for the 'init' command.
+#[derive(Parser, Debug)]
+pub struct InitCommand {
+    /// The Jira URL to use in the configuration file to be created
+    #[arg(short, long)]
+    pub jira_url: Option<String>,
+
+    /// The project key to use in the configuration file to be created
+    #[arg(short, long)]
+    pub project_key: Option<String>,
+
+    /// Force the configuration file override
+    #[arg(short, long)]
+    pub force: bool,
 }
 
 impl Args {

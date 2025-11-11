@@ -6,7 +6,7 @@ mod resolved;
 mod value_resolver;
 
 pub use error::ConfigError;
-pub use file::ConfigFile;
+pub use file::{ConfigFile, ProfileDef, get_home_config_file_path};
 pub use resolved::ResolvedConfig;
 
 #[derive(Debug, Default, Clone)]

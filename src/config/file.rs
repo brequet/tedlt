@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -38,9 +38,7 @@ impl ConfigFile {
             return Self::from_str(&content);
         }
 
-        let home_path = dirs::home_dir()
-            .ok_or(ConfigError::NoHomeDir)?
-            .join("tedlt.jsonc");
+        let home_path = get_home_config_file_path()?;
         if home_path.exists() {
             let content = std::fs::read_to_string(home_path.clone())?;
             debug!("Loading config from home directory: {:?}", home_path);
@@ -57,6 +55,13 @@ impl ConfigFile {
     ) -> Result<ResolvedConfig, ConfigError> {
         ResolvedConfig::build(self, cli_overrides, profile_names)
     }
+}
+
+pub fn get_home_config_file_path() -> Result<PathBuf, ConfigError> {
+    let path = dirs::home_dir()
+        .ok_or(ConfigError::NoHomeDir)?
+        .join(CONFIG_FILE_NAME);
+    Ok(path)
 }
 
 #[cfg(test)]
