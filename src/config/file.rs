@@ -52,10 +52,10 @@ impl ConfigFile {
 
     pub fn resolve(
         &self,
-        profile_name: Option<&str>,
+        profile_names: &[String],
         cli_overrides: CliOverrides,
     ) -> Result<ResolvedConfig, ConfigError> {
-        ResolvedConfig::build(self, cli_overrides, profile_name)
+        ResolvedConfig::build(self, cli_overrides, profile_names)
     }
 }
 

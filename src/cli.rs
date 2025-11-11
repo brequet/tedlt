@@ -46,9 +46,10 @@ pub struct CreateCommand {
     #[arg(required = true)]
     pub title: String,
 
-    /// The name of the profile to use for creating the ticket.
-    #[arg(short, long)]
-    pub profile: Option<String>,
+    /// The name of profile(s) to use for creating the ticket.
+    /// Can be specified multiple times. Profiles are merged left-to-right.
+    #[arg(short, long, value_name = "PROFILE")]
+    pub profile: Vec<String>,
 }
 
 /// Arguments for the 'info' command.
@@ -57,9 +58,10 @@ pub struct InfoCommand {
     #[command(subcommand)]
     pub subcmd: InfoSubCommand,
 
-    /// The name of the profile to use for context (e.g., project key).
-    #[arg(long, global = true)]
-    pub profile: Option<String>,
+    /// The name of profile(s) to use for context (e.g., project key).
+    /// Can be specified multiple times. Profiles are merged left-to-right.
+    #[arg(long, global = true, value_name = "PROFILE")]
+    pub profile: Vec<String>,
 }
 
 #[derive(Subcommand, Debug)]

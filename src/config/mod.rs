@@ -1,5 +1,6 @@
 mod error;
 mod file;
+mod profiles_resolver;
 mod properties_resolver;
 mod resolved;
 mod value_resolver;
@@ -38,7 +39,7 @@ mod tests {
             project_key: None,
         };
 
-        let resolved_config = config_file.resolve(None, cli_overrides).unwrap();
+        let resolved_config = config_file.resolve(&[], cli_overrides).unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://example.atlassian.net");
         assert_eq!(resolved_config.project_key, "TEST");
@@ -67,7 +68,7 @@ mod tests {
             project_key: None,
         };
 
-        let resolved_config = config_file.resolve(None, cli_overrides).unwrap();
+        let resolved_config = config_file.resolve(&[], cli_overrides).unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://example.atlassian.net");
         assert_eq!(resolved_config.project_key, "TEST");
@@ -97,7 +98,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://work.atlassian.net");
@@ -147,7 +148,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://work.atlassian.net");
@@ -205,7 +206,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://work.atlassian.net");
@@ -235,7 +236,7 @@ mod tests {
             project_key: None,
         };
 
-        let resolved_config = config_file.resolve(None, cli_overrides).unwrap();
+        let resolved_config = config_file.resolve(&[], cli_overrides).unwrap();
 
         assert_eq!(
             resolved_config.jira_url,
@@ -264,7 +265,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://example.atlassian.net");
@@ -292,7 +293,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://cli.atlassian.net");
@@ -319,7 +320,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://work.atlassian.net");
@@ -346,7 +347,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://example.atlassian.net");
@@ -375,7 +376,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://profile.atlassian.net");
@@ -388,7 +389,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://cli.atlassian.net");
@@ -401,7 +402,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://cli.atlassian.net");
@@ -428,12 +429,70 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         // jira_url comes from profile, project_key from CLI
         assert_eq!(resolved_config.jira_url, "https://profile.atlassian.net");
         assert_eq!(resolved_config.project_key, "CLI");
+    }
+
+    #[test]
+    fn test_loading_multiple_profiles() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "properties": {
+                "epic_id": "12345",
+                "issueTypes": {
+                  "story": "10001",
+                  "bug": "10004"
+                }
+              },
+              "profiles": {
+                "work": {
+                  "project_key": "WORK",
+                  "fields": {
+                    "issuetype": { "id": "${issueTypes.story}" },
+                    "priority": { "id": "3" },
+                    "labels": ["work-item"]
+                  }
+                },
+                "bug": {
+                  "fields": {
+                    "issuetype": { "id": "${issueTypes.bug}" },
+                    "labels": ["bug"]
+                  }
+                },
+                "story": {
+                  "fields": {
+                    "parent": { "id": "${epic_id}" },
+                    "labels": ["user-story"]
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: None,
+            project_key: None,
+        };
+
+        let resolved_config = config_file
+            .resolve(&["work".to_string(), "bug".to_string()], cli_overrides)
+            .unwrap();
+
+        assert_eq!(resolved_config.project_key, "WORK");
+
+        let fields = resolved_config.fields.as_ref().unwrap();
+
+        assert_eq!(fields["issuetype"]["id"], "10004");
+        assert_eq!(fields["priority"]["id"], "3");
+        assert_eq!(fields["labels"], serde_json::json!(["work-item", "bug"]));
+        assert!(fields.get("parent").is_none());
     }
 
     #[test]
@@ -450,7 +509,7 @@ mod tests {
             project_key: Some("CLI".to_string()),
         };
 
-        let resolved_config = config_file.resolve(None, cli_overrides).unwrap();
+        let resolved_config = config_file.resolve(&[], cli_overrides).unwrap();
 
         assert_eq!(resolved_config.jira_url, "https://cli.atlassian.net");
         assert_eq!(resolved_config.project_key, "CLI");
@@ -480,7 +539,7 @@ mod tests {
         };
 
         let resolved_config = config_file
-            .resolve(Some("work".to_string()), cli_overrides)
+            .resolve(&["work".to_string()], cli_overrides)
             .unwrap();
 
         // CLI overrides jira_url, profile provides project_key and fields
@@ -516,12 +575,246 @@ mod tests {
             project_key: None,
         };
 
-        let result = config_file.resolve(Some("non_existing".to_string()), cli_overrides);
+        let result = config_file.resolve(&["non_existing".to_string()], cli_overrides);
 
         assert!(result.is_err());
         match result {
             Err(ConfigError::ProfileNotFound(profile)) => {
                 assert_eq!(profile, "non_existing");
+            }
+            _ => panic!("Expected ProfileNotFound error"),
+        }
+    }
+
+    #[test]
+    fn test_multiple_profiles_deep_merge() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "profiles": {
+                "base": {
+                  "fields": {
+                    "issuetype": { "id": "10001" },
+                    "priority": { "id": "3" },
+                    "components": [{ "id": "100" }],
+                    "customfield_1": {
+                      "nested": {
+                        "field1": "value1",
+                        "field2": "value2"
+                      }
+                    }
+                  }
+                },
+                "override": {
+                  "fields": {
+                    "issuetype": { "id": "10002" },
+                    "components": [{ "id": "200" }],
+                    "customfield_1": {
+                      "nested": {
+                        "field2": "override2",
+                        "field3": "value3"
+                      }
+                    },
+                    "labels": ["new-label"]
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: None,
+            project_key: None,
+        };
+
+        let resolved_config = config_file
+            .resolve(&["base".to_string(), "override".to_string()], cli_overrides)
+            .unwrap();
+
+        let fields = resolved_config.fields.as_ref().unwrap();
+
+        assert_eq!(fields["issuetype"]["id"], "10002");
+        assert_eq!(fields["priority"]["id"], "3");
+        assert_eq!(
+            fields["components"],
+            serde_json::json!([{ "id": "100" }, { "id": "200" }])
+        );
+        assert_eq!(fields["customfield_1"]["nested"]["field1"], "value1");
+        assert_eq!(fields["customfield_1"]["nested"]["field2"], "override2");
+        assert_eq!(fields["customfield_1"]["nested"]["field3"], "value3");
+        assert_eq!(fields["labels"], serde_json::json!(["new-label"]));
+    }
+
+    #[test]
+    fn test_three_profiles_merge_order() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "profiles": {
+                "first": {
+                  "project_key": "FIRST",
+                  "fields": {
+                    "field1": "first",
+                    "field2": "first",
+                    "field3": "first"
+                  }
+                },
+                "second": {
+                  "project_key": "SECOND",
+                  "fields": {
+                    "field2": "second",
+                    "field4": "second"
+                  }
+                },
+                "third": {
+                  "fields": {
+                    "field3": "third",
+                    "field5": "third"
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: None,
+            project_key: None,
+        };
+
+        let resolved_config = config_file
+            .resolve(
+                &[
+                    "first".to_string(),
+                    "second".to_string(),
+                    "third".to_string(),
+                ],
+                cli_overrides,
+            )
+            .unwrap();
+
+        assert_eq!(resolved_config.project_key, "SECOND");
+
+        let fields = resolved_config.fields.as_ref().unwrap();
+        assert_eq!(fields["field1"], "first");
+        assert_eq!(fields["field2"], "second");
+        assert_eq!(fields["field3"], "third");
+        assert_eq!(fields["field4"], "second");
+        assert_eq!(fields["field5"], "third");
+    }
+
+    #[test]
+    fn test_multiple_profiles_with_cli_override() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "profiles": {
+                "profile1": {
+                  "project_key": "PROF1",
+                  "fields": {
+                    "field1": "value1"
+                  }
+                },
+                "profile2": {
+                  "jira_url": "https://profile2.atlassian.net",
+                  "fields": {
+                    "field2": "value2"
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: Some("https://cli.atlassian.net".to_string()),
+            project_key: Some("CLI".to_string()),
+        };
+
+        let resolved_config = config_file
+            .resolve(
+                &["profile1".to_string(), "profile2".to_string()],
+                cli_overrides,
+            )
+            .unwrap();
+
+        // CLI should override everything
+        assert_eq!(resolved_config.jira_url, "https://cli.atlassian.net");
+        assert_eq!(resolved_config.project_key, "CLI");
+
+        // Fields should still be merged from profiles
+        let fields = resolved_config.fields.as_ref().unwrap();
+        assert_eq!(fields["field1"], "value1");
+        assert_eq!(fields["field2"], "value2");
+    }
+
+    #[test]
+    fn test_empty_profile_names_with_default_profile() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "profiles": {
+                "default": {
+                  "project_key": "DEFAULT",
+                  "fields": {
+                    "field1": "default_value"
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: None,
+            project_key: None,
+        };
+
+        // Empty slice should use default profile if it exists
+        let resolved_config = config_file.resolve(&[], cli_overrides).unwrap();
+
+        assert_eq!(resolved_config.project_key, "DEFAULT");
+        let fields = resolved_config.fields.as_ref().unwrap();
+        assert_eq!(fields["field1"], "default_value");
+    }
+
+    #[test]
+    fn test_profile_not_found_in_multiple() {
+        let input = r#"
+            {
+              "jira_url": "https://example.atlassian.net",
+              "project_key": "PROJ",
+              "profiles": {
+                "existing": {
+                  "fields": {
+                    "field1": "value1"
+                  }
+                }
+              }
+            }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+
+        let cli_overrides = CliOverrides {
+            jira_url: None,
+            project_key: None,
+        };
+
+        // Should fail if any profile in the list doesn't exist
+        let result = config_file.resolve(
+            &["existing".to_string(), "nonexistent".to_string()],
+            cli_overrides,
+        );
+
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::ProfileNotFound(profile)) => {
+                assert_eq!(profile, "nonexistent");
             }
             _ => panic!("Expected ProfileNotFound error"),
         }

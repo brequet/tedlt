@@ -47,12 +47,12 @@ async fn run(args: Args) -> Result<(), AppError> {
         project_key: args.project_key,
     };
 
-    let profile_name = match &args.command {
-        cli::Commands::Create(cmd) => cmd.profile.as_deref(),
-        cli::Commands::Info(cmd) => cmd.profile.as_deref(),
+    let profile_names = match &args.command {
+        cli::Commands::Create(cmd) => cmd.profile.as_slice(),
+        cli::Commands::Info(cmd) => cmd.profile.as_slice(),
     };
 
-    let resolved_config = config_file.resolve(profile_name, cli_overrides)?;
+    let resolved_config = config_file.resolve(profile_names, cli_overrides)?;
 
     debug!("Resolved configuration: {:?}", resolved_config);
 

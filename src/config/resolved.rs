@@ -1,14 +1,9 @@
-use std::collections::HashMap;
-
 use serde_json::Value;
-use tracing::info;
 
 use super::{
-    CliOverrides, ConfigError, ConfigFile, file::ProfileDef,
+    CliOverrides, ConfigError, ConfigFile, profiles_resolver::resolve_profile,
     properties_resolver::PropertiesResolver, value_resolver::ValueResolver,
 };
-
-pub const DEFAULT_PROFILE: &str = "default";
 
 #[derive(Debug, Clone)]
 pub struct ResolvedConfig {
@@ -21,9 +16,9 @@ impl ResolvedConfig {
     pub fn build(
         file: &ConfigFile,
         cli: CliOverrides,
-        profile_name: Option<&str>,
+        profile_names: &[String],
     ) -> Result<Self, ConfigError> {
-        let profile = Self::resolve_profile(&file.profiles, profile_name)?;
+        let profile = resolve_profile(&file.profiles, profile_names)?;
 
         let jira_url = std::env::var("JIRA_URL")
             .ok()
@@ -54,29 +49,5 @@ impl ResolvedConfig {
             project_key,
             fields,
         })
-    }
-
-    fn resolve_profile(
-        profiles: &HashMap<String, ProfileDef>,
-        profile_name: Option<&str>,
-    ) -> Result<Option<ProfileDef>, ConfigError> {
-        match (profiles.is_empty(), profile_name) {
-            (true, None) => Ok(None),
-            (true, Some(name)) => Err(ConfigError::ProfileNotFound(name.to_string())),
-            (false, None) => match profiles.get(DEFAULT_PROFILE) {
-                Some(default_profile) => {
-                    info!("Using profile '{}'", DEFAULT_PROFILE);
-                    Ok(Some(default_profile.clone()))
-                }
-                None => Ok(None),
-            },
-            (false, Some(profile_name_str)) => match profiles.get(profile_name_str) {
-                Some(profile) => {
-                    info!("Using profile '{}'", profile_name_str);
-                    Ok(Some(profile.clone()))
-                }
-                None => Err(ConfigError::ProfileNotFound(profile_name_str.to_string())),
-            },
-        }
     }
 }
