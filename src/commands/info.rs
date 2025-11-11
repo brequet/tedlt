@@ -13,7 +13,7 @@ pub async fn handle_command(cmd: InfoCommand, client: &JiraClient) -> Result<(),
             print_output(&project)?;
         }
         Ticket { key } => {
-            let ticket = client.get_ticket(key).await?;
+            let ticket = client.get_ticket(&key).await?;
             print_output(&ticket)?;
         }
         Epics {

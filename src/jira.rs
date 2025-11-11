@@ -1,4 +1,4 @@
-use reqwest::Client;
+use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use thiserror::Error;
@@ -157,6 +157,41 @@ impl JiraClient {
         }
     }
 
+    fn authenticate(&self, builder: RequestBuilder) -> RequestBuilder {
+        builder
+            .basic_auth(&self.email, Some(&self.api_token))
+            .header("Accept", "application/json")
+            .header("Content-Type", "application/json")
+    }
+
+    async fn handle_response<T, F>(response: Response, error_mapper: F) -> Result<T, JiraError>
+    where
+        T: for<'de> Deserialize<'de>,
+        F: FnOnce(String) -> JiraError,
+    {
+        let status = response.status();
+
+        if !status.is_success() {
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unable to read error response".to_string());
+            return Err(error_mapper(format!(
+                "Status: {}, Body: {}",
+                status, error_text
+            )));
+        }
+
+        response
+            .json()
+            .await
+            .map_err(|e| error_mapper(format!("Failed to parse response: {}", e)))
+    }
+
+    fn resolve_project_key(&self, project_key: Option<String>) -> String {
+        project_key.unwrap_or_else(|| self.project_key.clone())
+    }
+
     pub async fn create_ticket(
         &self,
         title: &str,
@@ -198,26 +233,11 @@ impl JiraClient {
             serde_json::to_string_pretty(&request_body).unwrap_or_default()
         );
 
-        let response = self
-            .client
-            .post(&url)
-            .basic_auth(&self.email, Some(&self.api_token))
-            .header("Accept", "application/json")
-            .header("Content-Type", "application/json")
-            .json(&request_body)
-            .send()
-            .await?;
+        let request = self.client.post(&url).json(&request_body);
+        let response = self.authenticate(request).send().await?;
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::CreateTicket(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
-
-        let create_response: CreateIssueResponse = response.json().await?;
+        let create_response: CreateIssueResponse =
+            Self::handle_response(response, JiraError::CreateTicket).await?;
 
         Ok(TicketInfo {
             key: create_response.key,
@@ -226,85 +246,38 @@ impl JiraClient {
     }
 
     pub async fn get_project(&self, project_key: Option<String>) -> Result<JiraProject, JiraError> {
-        let project_key = project_key
-            .or_else(|| Some(self.project_key.clone()))
-            .ok_or_else(|| {
-                JiraError::GetProject(
-                    "Missing project key from input or loaded configuration.".to_string(),
-                )
-            })?;
+        let project_key = self.resolve_project_key(project_key);
+        let url = format!("{}/rest/api/3/project/{}", self.base_url, project_key);
 
-        let response = self
-            .client
-            .get(format!(
-                "{}/rest/api/3/project/{}",
-                self.base_url, project_key
-            ))
-            .basic_auth(&self.email, Some(&self.api_token))
-            .send()
-            .await?;
+        let request = self.client.get(&url);
+        let response = self.authenticate(request).send().await?;
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::GetProject(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
-
-        let project = response.json::<JiraProject>().await?;
-        Ok(project)
+        Self::handle_response(response, JiraError::GetProject).await
     }
 
-    pub async fn get_ticket(&self, ticket_key: String) -> Result<Value, JiraError> {
-        let response = self
-            .client
-            .get(format!("{}/rest/api/3/issue/{}", self.base_url, ticket_key))
-            .basic_auth(&self.email, Some(&self.api_token))
-            .send()
-            .await?;
+    pub async fn get_ticket(&self, ticket_key: &str) -> Result<Value, JiraError> {
+        let url = format!("{}/rest/api/3/issue/{}", self.base_url, ticket_key);
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::GetTicket(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
+        let request = self.client.get(&url);
+        let response = self.authenticate(request).send().await?;
 
-        let project = response.json::<Value>().await?;
-        Ok(project)
+        Self::handle_response(response, JiraError::GetTicket).await
     }
 
     pub async fn get_epics_by_board(&self, board_id: u64) -> Result<Vec<Epic>, JiraError> {
-        let response = self
-            .client
-            .get(format!(
-                "{}/rest/agile/1.0/board/{}/epic",
-                self.base_url, board_id
-            ))
-            .basic_auth(&self.email, Some(&self.api_token))
-            .send()
-            .await?;
+        let url = format!("{}/rest/agile/1.0/board/{}/epic", self.base_url, board_id);
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::GetEpics(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
+        let request = self.client.get(&url);
+        let response = self.authenticate(request).send().await?;
 
         #[derive(Deserialize)]
         struct EpicResponse {
             values: Vec<Epic>,
         }
 
-        let epics = response.json::<EpicResponse>().await?;
-        Ok(epics.values)
+        let epic_response: EpicResponse =
+            Self::handle_response(response, JiraError::GetEpics).await?;
+        Ok(epic_response.values)
     }
 
     pub async fn get_boards(&self, project_key: Option<&str>) -> Result<Vec<Board>, JiraError> {
@@ -315,29 +288,17 @@ impl JiraClient {
             url.push_str(&format!("?projectKeyOrId={}", key));
         }
 
-        let response = self
-            .client
-            .get(url)
-            .basic_auth(&self.email, Some(&self.api_token))
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::GetBoard(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
+        let request = self.client.get(&url);
+        let response = self.authenticate(request).send().await?;
 
         #[derive(Deserialize)]
         struct BoardResponse {
             values: Vec<Board>,
         }
 
-        let boards = response.json::<BoardResponse>().await?;
-        Ok(boards.values)
+        let board_response: BoardResponse =
+            Self::handle_response(response, JiraError::GetBoard).await?;
+        Ok(board_response.values)
     }
 
     pub async fn get_fields(
@@ -345,37 +306,19 @@ impl JiraClient {
         project_key: Option<String>,
         issue_type_id: Option<String>,
     ) -> Result<Vec<IssueTypeInfo>, JiraError> {
-        let project_key = project_key
-            .or_else(|| Some(self.project_key.clone()))
-            .ok_or_else(|| {
-                JiraError::GetFields(
-                    "Missing project key from input or loaded configuration.".to_string(),
-                )
-            })?;
+        let project_key = self.resolve_project_key(project_key);
 
         let mut url = format!(
             "{}/rest/api/2/issue/createmeta?projectKeys={}&expand=projects.issuetypes.fields",
             self.base_url, project_key
         );
+
         if let Some(issue_type) = issue_type_id {
             url.push_str(&format!("&issuetypeIds={}", issue_type));
         }
 
-        let response = self
-            .client
-            .get(&url)
-            .basic_auth(&self.email, Some(&self.api_token))
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
-            return Err(JiraError::GetFields(format!(
-                "Status: {}, Body: {}",
-                status, error_text
-            )));
-        }
+        let request = self.client.get(&url);
+        let response = self.authenticate(request).send().await?;
 
         #[derive(Deserialize)]
         struct CreateMetaResponse {
@@ -395,7 +338,8 @@ impl JiraClient {
             fields: Value,
         }
 
-        let create_meta = response.json::<CreateMetaResponse>().await?;
+        let create_meta: CreateMetaResponse =
+            Self::handle_response(response, JiraError::GetFields).await?;
 
         let first_project = create_meta
             .projects
@@ -403,7 +347,7 @@ impl JiraClient {
             .next()
             .ok_or_else(|| JiraError::GetFields("No project found in response".to_string()))?;
 
-        let issue_types: Result<Vec<IssueTypeInfo>, JiraError> = first_project
+        first_project
             .issuetypes
             .into_iter()
             .map(|issue_type_meta| {
@@ -422,8 +366,6 @@ impl JiraClient {
                     fields,
                 })
             })
-            .collect();
-
-        issue_types
+            .collect()
     }
 }
