@@ -2,7 +2,16 @@ use clap::{Parser, Subcommand};
 
 /// A CLI tool to interact with Jira and create tickets efficiently.
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(
+    author,
+    version,
+    about,
+    long_about = None,
+    after_help = "EXAMPLES:\n  \
+        tedlt create \"Fix login bug\" --profile work\n  \
+        tedlt info project KAN\n  \
+        tedlt info ticket KAN-123"
+)]
 pub struct Args {
     /// Enable verbose logging.
     #[arg(short, long, global = true, default_value_t = false)]

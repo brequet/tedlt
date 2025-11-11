@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use tracing::debug;
 
 use super::{CliOverrides, ConfigError, resolved::ResolvedConfig};
 
@@ -26,13 +27,14 @@ const CONFIG_FILE_NAME: &str = "tedlt.jsonc";
 
 impl ConfigFile {
     pub fn from_str(content: &str) -> Result<Self, ConfigError> {
-        json5::from_str(content).map_err(|e| ConfigError::Parse(e.to_string()))
+        json5::from_str(content).map_err(ConfigError::Parse)
     }
 
     pub fn load() -> Result<Self, ConfigError> {
         let cwd_path = std::env::current_dir()?.join(CONFIG_FILE_NAME);
         if cwd_path.exists() {
-            let content = std::fs::read_to_string(cwd_path)?;
+            let content = std::fs::read_to_string(cwd_path.clone())?;
+            debug!("Loading config from current directory: {:?}", cwd_path);
             return Self::from_str(&content);
         }
 
@@ -40,7 +42,8 @@ impl ConfigFile {
             .ok_or(ConfigError::NoHomeDir)?
             .join("tedlt.jsonc");
         if home_path.exists() {
-            let content = std::fs::read_to_string(home_path)?;
+            let content = std::fs::read_to_string(home_path.clone())?;
+            debug!("Loading config from home directory: {:?}", home_path);
             return Self::from_str(&content);
         }
 

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use reqwest::{Client, RequestBuilder, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -42,15 +44,11 @@ struct Project {
 #[derive(Debug, Deserialize)]
 struct CreateIssueResponse {
     key: String,
-    #[serde(rename = "self")]
-    self_url: String,
 }
 
 #[derive(Debug)]
 pub struct TicketInfo {
     pub key: String,
-    #[allow(dead_code)]
-    pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -148,8 +146,13 @@ pub struct JiraClient {
 
 impl JiraClient {
     pub fn new(base_url: String, project_key: String, api_token: String, email: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .expect("Failed to create HTTP client");
+
         Self {
-            client: Client::new(),
+            client,
             base_url,
             project_key,
             api_token,
@@ -233,15 +236,16 @@ impl JiraClient {
             serde_json::to_string_pretty(&request_body).unwrap_or_default()
         );
 
-        let request = self.client.post(&url).json(&request_body);
-        let response = self.authenticate(request).send().await?;
+        let request = self
+            .authenticate(self.client.post(&url))
+            .json(&request_body);
+        let response = request.send().await?;
 
         let create_response: CreateIssueResponse =
             Self::handle_response(response, JiraError::CreateTicket).await?;
 
         Ok(TicketInfo {
             key: create_response.key,
-            url: create_response.self_url,
         })
     }
 

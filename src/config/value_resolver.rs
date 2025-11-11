@@ -1,21 +1,20 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::Value;
 
 use super::{ConfigError, error::ResolverError, properties_resolver::PropertiesResolver};
 
+static VAR_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\$\{([^}]+)\}").expect("Invalid regex pattern"));
+
 /// Resolves template variables (e.g., `${variable}`) in JSON values
 pub struct ValueResolver<'a> {
     properties: &'a PropertiesResolver,
-    pattern: Regex,
 }
 
 impl<'a> ValueResolver<'a> {
     pub fn new(properties: &'a PropertiesResolver) -> Self {
-        Self {
-            properties,
-            // Regex pattern to match ${variable_name}
-            pattern: Regex::new(r"\$\{([^}]+)\}").expect("Invalid regex pattern"),
-        }
+        Self { properties }
     }
 
     /// Recursively resolves template variables in a JSON value
@@ -61,7 +60,7 @@ impl<'a> ValueResolver<'a> {
         let mut last_end = 0;
         let mut has_error = None;
 
-        for cap in self.pattern.captures_iter(s) {
+        for cap in VAR_PATTERN.captures_iter(s) {
             let full_match = cap.get(0).unwrap();
             let var_name = cap.get(1).unwrap().as_str();
 

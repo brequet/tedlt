@@ -25,8 +25,9 @@ impl ResolvedConfig {
     ) -> Result<Self, ConfigError> {
         let profile = Self::resolve_profile(&file.profiles, profile_name)?;
 
-        let jira_url = cli
-            .jira_url
+        let jira_url = std::env::var("JIRA_URL")
+            .ok()
+            .or(cli.jira_url)
             .or_else(|| profile.as_ref().and_then(|p| p.jira_url.clone()))
             .or_else(|| file.jira_url.clone())
             .ok_or_else(|| ConfigError::MissingField("jira_url".into()))?;
@@ -45,6 +46,8 @@ impl ResolvedConfig {
             .and_then(|p| p.fields.as_ref())
             .map(|f| value_resolver.resolve(f))
             .transpose()?;
+
+        reqwest::Url::parse(&jira_url).map_err(|_| ConfigError::InvalidUrl(jira_url.clone()))?;
 
         Ok(Self {
             jira_url,

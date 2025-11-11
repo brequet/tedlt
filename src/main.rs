@@ -78,8 +78,13 @@ async fn run(args: Args) -> Result<(), AppError> {
 fn init_tracing(verbose: bool) {
     let default_log_level = if verbose { "debug" } else { "info" };
 
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(format!("tedlt={}", default_log_level)));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        EnvFilter::new(format!(
+            "tedlt={},reqwest={}",
+            default_log_level,
+            if verbose { "debug" } else { "warn" }
+        ))
+    });
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)

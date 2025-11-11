@@ -5,15 +5,19 @@ pub enum ConfigError {
     #[error("Failed to read config file: {0}")]
     FileRead(#[from] std::io::Error),
 
-    #[error("Failed to parse config file: {0}")]
-    Parse(String),
+    #[error("Failed to parse config file")]
+    Parse(#[source] json5::Error),
 
     #[error("Failed to get home directory")]
     NoHomeDir,
+
     #[error(
         "Configuration file not found. Looking for 'tedlt.jsonc' in current or home directory."
     )]
     NotFound,
+
+    #[error("Invalid URL: {0}")]
+    InvalidUrl(String),
 
     #[error("Missing required field: {0}")]
     MissingField(String),
