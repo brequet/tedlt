@@ -819,4 +819,265 @@ mod tests {
             _ => panic!("Expected ProfileNotFound error"),
         }
     }
+
+    // ========== Profile Inheritance Integration Tests ==========
+
+    #[test]
+    fn test_inheritance_simple_chain() {
+        let input = r#"{
+            "jira_url": "https://example.atlassian.net",
+            "project_key": "TEST",
+            "profiles": {
+                "base": {
+                    "jira_url": "https://base.atlassian.net",
+                    "project_key": "BASE",
+                    "fields": {
+                        "field1": "base_value",
+                        "field2": "base_value"
+                    }
+                },
+                "dev": {
+                    "project_key": "DEV",
+                    "fields": {
+                        "field2": "dev_value"
+                    },
+                    "inherits": ["base"]
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let resolved = config_file
+            .resolve(&["dev".to_string()], CliOverrides::default())
+            .unwrap();
+
+        assert_eq!(resolved.jira_url, "https://base.atlassian.net");
+        assert_eq!(resolved.project_key, "DEV");
+
+        let fields = resolved.fields.unwrap();
+        assert_eq!(fields["field1"], "base_value");
+        assert_eq!(fields["field2"], "dev_value");
+    }
+
+    #[test]
+    fn test_inheritance_with_default_profile() {
+        let input = r#"{
+            "profiles": {
+                "default": {
+                    "jira_url": "https://default.atlassian.net",
+                    "project_key": "DEFAULT",
+                    "fields": {
+                        "priority": { "id": "3" },
+                        "labels": ["default-label"]
+                    }
+                },
+                "work": {
+                    "project_key": "WORK",
+                    "fields": {
+                        "labels": ["work-label"]
+                    }
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let resolved = config_file
+            .resolve(&["work".to_string()], CliOverrides::default())
+            .unwrap();
+
+        assert_eq!(resolved.jira_url, "https://default.atlassian.net");
+        assert_eq!(resolved.project_key, "WORK");
+
+        let fields = resolved.fields.unwrap();
+        assert_eq!(fields["priority"]["id"], "3");
+        assert_eq!(
+            fields["labels"],
+            serde_json::json!(["default-label", "work-label"])
+        );
+    }
+
+    #[test]
+    fn test_inheritance_multiple_levels() {
+        let input = r#"{
+            "profiles": {
+                "default": {
+                    "jira_url": "https://default.atlassian.net",
+                    "project_key": "DEFAULT",
+                    "fields": {
+                        "f1": "default",
+                        "f2": "default",
+                        "f3": "default",
+                        "f4": "default"
+                    }
+                },
+                "base": {
+                    "fields": {
+                        "f2": "base",
+                        "f3": "base"
+                    }
+                },
+                "middle": {
+                    "fields": {
+                        "f3": "middle"
+                    },
+                    "inherits": ["base"]
+                },
+                "final": {
+                    "project_key": "FINAL",
+                    "fields": {
+                        "f4": "final"
+                    },
+                    "inherits": ["middle"]
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let resolved = config_file
+            .resolve(&["final".to_string()], CliOverrides::default())
+            .unwrap();
+
+        assert_eq!(resolved.project_key, "FINAL");
+
+        let fields = resolved.fields.unwrap();
+        assert_eq!(fields["f1"], "default");
+        assert_eq!(fields["f2"], "base");
+        assert_eq!(fields["f3"], "middle");
+        assert_eq!(fields["f4"], "final");
+    }
+
+    #[test]
+    fn test_inheritance_diamond_pattern() {
+        let input = r#"{
+            "profiles": {
+                "base": {
+                    "jira_url": "https://base.atlassian.net",
+                    "project_key": "BASE",
+                    "fields": {
+                        "field1": "base",
+                        "field2": "base"
+                    }
+                },
+                "left": {
+                    "project_key": "LEFT",
+                    "fields": {
+                        "field2": "left"
+                    },
+                    "inherits": ["base"]
+                },
+                "right": {
+                    "jira_url": "https://right.atlassian.net",
+                    "fields": {
+                        "field2": "right",
+                        "field3": "right"
+                    },
+                    "inherits": ["base"]
+                },
+                "child": {
+                    "fields": {
+                        "field3": "child"
+                    },
+                    "inherits": ["left", "right"]
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let resolved = config_file
+            .resolve(&["child".to_string()], CliOverrides::default())
+            .unwrap();
+
+        assert_eq!(resolved.jira_url, "https://right.atlassian.net");
+        assert_eq!(resolved.project_key, "LEFT");
+
+        let fields = resolved.fields.unwrap();
+        assert_eq!(fields["field1"], "base");
+        assert_eq!(fields["field2"], "right");
+        assert_eq!(fields["field3"], "child");
+    }
+
+    #[test]
+    fn test_inheritance_circular_dependency_error() {
+        let input = r#"{
+            "profiles": {
+                "a": {
+                    "jira_url": "https://a.atlassian.net",
+                    "project_key": "A",
+                    "inherits": ["b"]
+                },
+                "b": {
+                    "inherits": ["a"]
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let result = config_file.resolve(&["a".to_string()], CliOverrides::default());
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            ConfigError::CircularDependency(_)
+        ));
+    }
+
+    #[test]
+    fn test_inheritance_default_profile_cannot_inherit() {
+        let input = r#"{
+            "profiles": {
+                "default": {
+                    "jira_url": "https://default.atlassian.net",
+                    "project_key": "DEFAULT",
+                    "inherits": ["base"]
+                },
+                "base": {
+                    "jira_url": "https://base.atlassian.net",
+                    "project_key": "BASE"
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let result = config_file.resolve(&["default".to_string()], CliOverrides::default());
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ConfigError::InvalidConfig(_)));
+    }
+
+    #[test]
+    fn test_inheritance_with_cli_overrides() {
+        let input = r#"{
+            "profiles": {
+                "base": {
+                    "jira_url": "https://base.atlassian.net",
+                    "project_key": "BASE",
+                    "fields": {
+                        "field1": "base"
+                    }
+                },
+                "dev": {
+                    "fields": {
+                        "field2": "dev"
+                    },
+                    "inherits": ["base"]
+                }
+            }
+        }"#;
+
+        let config_file = ConfigFile::from_str(input).unwrap();
+        let cli_overrides = CliOverrides {
+            jira_url: Some("https://cli.atlassian.net".to_string()),
+            project_key: Some("CLI".to_string()),
+        };
+        let resolved = config_file
+            .resolve(&["dev".to_string()], cli_overrides)
+            .unwrap();
+
+        assert_eq!(resolved.jira_url, "https://cli.atlassian.net");
+        assert_eq!(resolved.project_key, "CLI");
+
+        let fields = resolved.fields.unwrap();
+        assert_eq!(fields["field1"], "base");
+        assert_eq!(fields["field2"], "dev");
+    }
 }

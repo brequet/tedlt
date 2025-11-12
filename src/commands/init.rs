@@ -33,6 +33,7 @@ pub async fn handle_command(cmd: InitCommand) -> Result<(), AppError> {
                     jira_url: None,
                     project_key: None,
                     fields: Some(serde_json::json!({})),
+                    inherits: vec![], // TODO: should not appear in generated config
                 },
             );
             profiles

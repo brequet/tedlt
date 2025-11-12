@@ -21,6 +21,8 @@ pub struct ProfileDef {
     pub jira_url: Option<String>,
     pub project_key: Option<String>,
     pub fields: Option<Value>,
+    #[serde(default)]
+    pub inherits: Vec<String>,
 }
 
 const CONFIG_FILE_NAME: &str = "tedlt.jsonc";

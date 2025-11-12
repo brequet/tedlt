@@ -1,0 +1,147 @@
+{
+  // Base configuration
+  "jira_url": "https://company.atlassian.net",
+  "project_key": "MAIN",
+
+  // Properties can be referenced in profile fields using {{property.name}} syntax
+  "properties": {
+    "team_lead": "USER123",
+    "default_priority": "3"
+  },
+
+  "profiles": {
+    // The "default" profile is special - all other profiles automatically inherit from it
+    // Note: The default profile CANNOT have an "inherits" field
+    "default": {
+      "fields": {
+        "priority": { "id": "{{default_priority}}" },
+        "labels": ["auto-created"],
+        "components": [{ "id": "10000" }]
+      }
+    },
+
+    // Base profile for all bugs
+    "bug-base": {
+      "fields": {
+        "issuetype": { "id": "10004" },
+        "labels": ["bug"],
+        "priority": { "id": "2" } // Overrides default priority
+      }
+    },
+
+    // Simple inheritance: bug profile inherits from bug-base
+    // Inheritance order: default -> bug-base -> bug
+    "bug": {
+      "fields": {
+        "labels": ["needs-triage"] // Arrays are concatenated: ["auto-created", "bug", "needs-triage"]
+      },
+      "inherits": ["bug-base"]
+    },
+
+    // Critical bugs inherit from bug but override priority
+    // Inheritance order: default -> bug-base -> bug -> bug-critical
+    "bug-critical": {
+      "fields": {
+        "priority": { "id": "1" },
+        "labels": ["urgent"]
+      },
+      "inherits": ["bug"]
+    },
+
+    // Base profile for features
+    "feature-base": {
+      "project_key": "FEAT",
+      "fields": {
+        "issuetype": { "id": "10001" },
+        "labels": ["feature"]
+      }
+    },
+
+    // Multiple inheritance: experimental-feature inherits from both bug-base and feature-base
+    // When there are conflicts, the rightmost parent wins
+    // Inheritance order: default -> bug-base -> feature-base -> experimental-feature
+    "experimental-feature": {
+      "fields": {
+        "labels": ["experimental"],
+        "customfield_10050": "experimental-flag"
+      },
+      "inherits": ["bug-base", "feature-base"]
+    },
+
+    // Work profile for personal tasks
+    "work": {
+      "jira_url": "https://work-instance.atlassian.net",
+      "project_key": "WORK",
+      "fields": {
+        "assignee": { "id": "{{team_lead}}" },
+        "labels": ["work-task"]
+      }
+      // No inherits specified, but still inherits from "default" automatically
+    },
+
+    // Personal profile for side projects
+    "personal": {
+      "jira_url": "https://personal.atlassian.net",
+      "project_key": "PERSONAL",
+      "fields": {
+        "labels": ["personal"],
+        "priority": { "id": "4" }
+      }
+      // No inherits specified, but still inherits from "default" automatically
+    },
+
+    // Diamond inheritance example:
+    //       default
+    //       /    \
+    //    base1  base2
+    //       \    /
+    //      diamond
+    // Resolution order: default -> base1 -> base2 -> diamond
+    // (Each profile appears only once, even if reached through multiple paths)
+    "base1": {
+      "fields": {
+        "customfield_10001": "from-base1",
+        "customfield_10002": "from-base1"
+      }
+    },
+
+    "base2": {
+      "fields": {
+        "customfield_10002": "from-base2",
+        "customfield_10003": "from-base2"
+      }
+    },
+
+    "diamond": {
+      "fields": {
+        "customfield_10003": "from-diamond"
+      },
+      "inherits": ["base1", "base2"]
+    }
+  }
+}
+
+// Usage examples:
+//
+// 1. Use the bug profile:
+//    tedlt create "Fix login issue" --profile bug
+//    Result: Inherits from default and bug-base, gets all their fields merged
+//
+// 2. Use critical bug profile:
+//    tedlt create "System crash" --profile bug-critical
+//    Result: Inherits default -> bug-base -> bug -> bug-critical
+//
+// 3. Use experimental feature:
+//    tedlt create "New AI feature" --profile experimental-feature
+//    Result: Gets fields from default, bug-base, feature-base, and experimental-feature
+//
+// 4. Use multiple profiles (merged left to right):
+//    tedlt create "Task" --profile work --profile bug
+//    Result: Merges work profile with bug profile (bug settings override work settings)
+//
+// Priority rules:
+// - CLI overrides > Profile settings > Inherited settings > Default profile > Top-level config
+// - In inheritance chain: Child overrides Parent
+// - In multiple inheritance: Right overrides Left
+// - Arrays are concatenated (not replaced)
+// - Objects are deep-merged (nested fields preserved and merged recursively)

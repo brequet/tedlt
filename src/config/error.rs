@@ -25,6 +25,12 @@ pub enum ConfigError {
     #[error("Profile not found: {0}")]
     ProfileNotFound(String),
 
+    #[error("Circular dependency detected in profile inheritance: {0}")]
+    CircularDependency(String),
+
+    #[error("Invalid configuration: {0}")]
+    InvalidConfig(String),
+
     #[error("Variable not found: {0}")]
     VariableNotFound(String),
 }
