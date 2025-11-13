@@ -1,0 +1,97 @@
+---
+title: tedlt - Jira Tickets from the Command Line
+description: Create Jira tickets fast with just a title. No browser needed.
+template: splash
+hero:
+  tagline: Tout Est Dans Le Titre - Everything is in the title. Create Jira tickets instantly from your terminal.
+  actions:
+    - text: Get Started
+      link: /tedlt/getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/brequet/tedlt
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why tedlt?
+
+Creating Jira tickets shouldn't require opening a browser, navigating multiple pages, and filling out countless forms. **tedlt** lets you create tickets with a single command—just provide a title, and you're done.
+
+```sh
+tedlt create "Fix login page error"
+```
+
+That's it. Your ticket is created.
+
+## Key Features
+
+<CardGrid stagger>
+  <Card title="Lightning Fast" icon="rocket">
+    Create tickets in seconds with a single command. No context switching, no browser tabs.
+  </Card>
+  <Card title="Powerful Profiles" icon="setting">
+    Define reusable profiles for different ticket types, projects, and workflows.
+  </Card>
+  <Card title="Profile Inheritance" icon="puzzle">
+    Build complex configurations from simple building blocks using profile inheritance.
+  </Card>
+  <Card title="Property Templates" icon="document">
+    Use variables to reuse values across your configuration with `{{property}}` syntax.
+  </Card>
+  <Card title="Multi-Instance Support" icon="star">
+    Work with multiple Jira instances seamlessly using different profiles.
+  </Card>
+  <Card title="Jira Discovery" icon="information">
+    Query projects, epics, boards, fields, and tickets to find IDs and understand structure.
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+```sh
+# Create a simple ticket
+tedlt create "Update documentation"
+
+# Create a bug with the 'bug' profile
+tedlt create "Fix null pointer exception" --profile bug
+
+# Create a critical bug (inherits from bug profile + adds urgency)
+tedlt create "Production outage" --profile bug-critical
+
+# Discover project information
+tedlt info project MYPROJ
+
+# View ticket details
+tedlt info ticket MYPROJ-123
+```
+
+## How It Works
+
+1. **Configure once**: Set up your Jira credentials and default settings
+2. **Define profiles**: Create profiles for common ticket types (bugs, features, tasks)
+3. **Create tickets**: Use profiles to create tickets with a single command
+4. **Discover metadata**: Query Jira for project info, field IDs, and more
+
+## What Makes tedlt Different?
+
+- **Title-first philosophy**: Most tickets start with a good title. Fill in details later if needed.
+- **Configuration as code**: Your ticket templates live in version-controlled config files.
+- **Composable profiles**: Combine multiple profiles using inheritance for maximum flexibility.
+- **Developer-friendly**: Built for command-line workflows and automation.
+
+## Next Steps
+
+<CardGrid>
+  <Card title="Install tedlt" icon="rocket">
+    [Download and install](/tedlt/getting-started/installation/) tedlt for your platform.
+  </Card>
+  <Card title="Quick Start Guide" icon="open-book">
+    Follow the [Quick Start](/tedlt/getting-started/quick-start/) to create your first ticket.
+  </Card>
+  <Card title="Configure Profiles" icon="setting">
+    Learn about [profiles](/tedlt/configuration/profiles/) to customize ticket creation.
+  </Card>
+</CardGrid>
