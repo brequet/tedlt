@@ -363,13 +363,13 @@ Create small, focused profiles and compose them:
     },
     "frontend": {
       "fields": {
-        "components": [{ "id": "{{frontend_team}}" }],
+        "components": [{ "id": "${frontend_team}" }],
         "labels": ["frontend"]
       }
     },
     "backend": {
       "fields": {
-        "components": [{ "id": "{{backend_team}}" }],
+        "components": [{ "id": "${backend_team}" }],
         "labels": ["backend"]
       }
     },

@@ -559,7 +559,7 @@ Without this flag, `init` will refuse to overwrite an existing config file.
 #### Output
 
 ```
-Configuration file created at: /home/user/.tedlt/config.json
+Configuration file created at: /home/user/tedlt.jsonc
 ```
 
 #### Examples

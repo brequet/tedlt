@@ -529,8 +529,8 @@ Avoid repeating values:
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" },
-        "components": [{ "id": "{{frontend_component}}" }]
+        "assignee": { "id": "${team_lead}" },
+        "components": [{ "id": "${frontend_component}" }]
       }
     }
   }
@@ -562,7 +562,7 @@ This shows how profiles are merged and what values are sent to Jira.
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "{{default_priority}}" },
+        "priority": { "id": "${default_priority}" },
         "labels": ["auto-created"]
       }
     },
@@ -577,7 +577,7 @@ This shows how profiles are merged and what values are sent to Jira.
       "inherits": ["bug"],
       "fields": {
         "priority": { "id": "1" },
-        "assignee": { "id": "{{team_lead}}" },
+        "assignee": { "id": "${team_lead}" },
         "labels": ["critical", "urgent"]
       }
     },

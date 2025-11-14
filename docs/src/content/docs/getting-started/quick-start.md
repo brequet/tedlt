@@ -25,19 +25,7 @@ tedlt uses Jira's REST API, which requires an API token for authentication.
 
 tedlt reads your Jira credentials from environment variables. You have two options:
 
-### Option A: Using a `.env` file (Recommended)
-
-Create a `.env` file in the directory where you'll run tedlt:
-
-```bash
-# .env
-JIRA_API_TOKEN=your_api_token_here
-JIRA_EMAIL=your.email@example.com
-```
-
-tedlt will automatically load this file when you run commands from that directory.
-
-### Option B: Export environment variables
+### Option A: Export environment variables
 
 Set environment variables in your shell:
 
@@ -55,11 +43,21 @@ set JIRA_API_TOKEN=your_api_token_here
 set JIRA_EMAIL=your.email@example.com
 ```
 
+### Option B: Using a `.env` file (Recommended if using multiple Jira instances)
+
+Create a `.env` file in the directory where you'll run tedlt:
+
+```bash
+# .env
+JIRA_API_TOKEN=your_api_token_here
+JIRA_EMAIL=your.email@example.com
+```
+
+tedlt will automatically load this file when you run commands from that directory.
+
 :::tip
-The `.env` file approach is recommended because:
-- Credentials are project-specific
-- No need to set variables in every shell session
-- Easy to share setup with team members (just don't commit the actual `.env` file!)
+The `.env` file approach let the user set up multiple workspaces with different configuration, allowing
+for project-specific Jira credentials configuration.
 :::
 
 ## Step 3: Initialize Configuration
@@ -70,9 +68,7 @@ Create a configuration file with your Jira instance details:
 tedlt init
 ```
 
-This creates a configuration file at:
-- **Windows**: `C:\Users\YourName\.tedlt\config.json`
-- **macOS/Linux**: `~/.tedlt/config.json`
+This creates a configuration file at: `~/.tedlt.jsonc`
 
 You'll be prompted to enter:
 - **Jira URL**: Your Jira instance URL (e.g., `https://yourcompany.atlassian.net`)
@@ -91,42 +87,7 @@ tedlt init --force
 ```
 :::
 
-## Step 4: Discover Your Project
-
-Before creating tickets, explore your Jira project to understand its structure:
-
-```bash
-tedlt info project PROJ
-```
-
-This shows:
-- Available issue types (Task, Bug, Story, etc.) and their IDs
-- Components and their IDs
-- Versions and their IDs
-- Other project metadata
-
-Example output:
-```json
-{
-  "key": "PROJ",
-  "name": "My Project",
-  "issueTypes": [
-    { "id": "10001", "name": "Task" },
-    { "id": "10004", "name": "Bug" },
-    { "id": "10002", "name": "Story" }
-  ],
-  "components": [
-    { "id": "10100", "name": "Frontend" },
-    { "id": "10101", "name": "Backend" }
-  ]
-}
-```
-
-:::tip
-Save these IDs—you'll need them when configuring profiles!
-:::
-
-## Step 5: Create Your First Ticket
+## Step 4: Create Your First Ticket
 
 Create a simple ticket with just a title:
 
@@ -134,14 +95,9 @@ Create a simple ticket with just a title:
 tedlt create "Fix login page error"
 ```
 
-If everything is configured correctly, tedlt will:
-1. Connect to your Jira instance
-2. Create a ticket in your default project
-3. Display the ticket key (e.g., `PROJ-123`)
-
 Success! You've created your first ticket.
 
-## Step 6: Configure Profiles (Optional)
+## Step 5: Go further and configure Profiles
 
 Profiles let you create different types of tickets with pre-configured fields. Edit your config file:
 
@@ -174,7 +130,11 @@ Now create a bug ticket:
 tedlt create "Null pointer exception in user service" --profile bug
 ```
 
-## Common Commands
+:::tip
+To get your board configurable fields and values, use the `tedlt info` commands.
+:::
+
+## Common Commands Examples
 
 Here are the most common commands you'll use:
 
@@ -203,25 +163,6 @@ tedlt info epics --project-key PROJ
 # Discover available fields for an issue type
 tedlt info fields --project-key PROJ --issue-type 10001
 ```
-
-## Troubleshooting
-
-### "Authentication failed"
-- Verify your API token is correct
-- Check that `JIRA_EMAIL` matches your Jira account email
-- Ensure environment variables are loaded (try running from the directory with your `.env` file)
-
-### "Project not found"
-- Verify the project key in your config file
-- Check that you have access to the project in Jira
-
-### "Field required" errors
-- Use `tedlt info fields` to discover which fields are required
-- Add required fields to your profile configuration
-
-### "Command not found"
-- Ensure tedlt is in your PATH
-- Try running with the full path to the binary
 
 ## Next Steps
 

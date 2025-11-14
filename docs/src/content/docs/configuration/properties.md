@@ -7,7 +7,7 @@ Property templates allow you to define reusable variables that can be referenced
 
 ## What Are Property Templates?
 
-Properties are named values that you define once and reference multiple times using the `{{property_name}}` syntax.
+Properties are named values that you define once and reference multiple times using the `${property_name}` syntax.
 
 Instead of repeating the same value in multiple places:
 
@@ -38,12 +38,12 @@ You can define it once as a property:
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" }
+        "assignee": { "id": "${team_lead}" }
       }
     },
     "task": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" }
+        "assignee": { "id": "${team_lead}" }
       }
     }
   }
@@ -83,14 +83,14 @@ Reference properties using double curly braces:
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" }
+        "assignee": { "id": "${team_lead}" }
       }
     }
   }
 }
 ```
 
-When creating a ticket with the `bug` profile, `{{team_lead}}` is replaced with `USER123`.
+When creating a ticket with the `bug` profile, `${team_lead}` is replaced with `USER123`.
 
 ## Common Use Cases
 
@@ -108,12 +108,12 @@ Store frequently used user IDs:
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" }
+        "assignee": { "id": "${team_lead}" }
       }
     },
     "qa-task": {
       "fields": {
-        "assignee": { "id": "{{qa_lead}}" }
+        "assignee": { "id": "${qa_lead}" }
       }
     }
   }
@@ -134,12 +134,12 @@ Store team or area component IDs:
   "profiles": {
     "frontend": {
       "fields": {
-        "components": [{ "id": "{{frontend_component}}" }]
+        "components": [{ "id": "${frontend_component}" }]
       }
     },
     "backend": {
       "fields": {
-        "components": [{ "id": "{{backend_component}}" }]
+        "components": [{ "id": "${backend_component}" }]
       }
     }
   }
@@ -161,12 +161,12 @@ Define standard priority levels:
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "{{priority_normal}}" }
+        "priority": { "id": "${priority_normal}" }
       }
     },
     "urgent": {
       "fields": {
-        "priority": { "id": "{{priority_critical}}" }
+        "priority": { "id": "${priority_critical}" }
       }
     }
   }
@@ -187,12 +187,12 @@ Store epic keys for linking stories:
   "profiles": {
     "auth-story": {
       "fields": {
-        "customfield_10050": "{{auth_epic}}"
+        "customfield_10050": "${auth_epic}"
       }
     },
     "api-story": {
       "fields": {
-        "customfield_10050": "{{api_epic}}"
+        "customfield_10050": "${api_epic}"
       }
     }
   }
@@ -213,8 +213,8 @@ Store complex custom field values:
   "profiles": {
     "default": {
       "fields": {
-        "customfield_10060": "{{sprint_current}}",
-        "customfield_10061": { "value": "{{team_name}}" }
+        "customfield_10060": "${sprint_current}",
+        "customfield_10061": { "value": "${team_name}" }
       }
     }
   }
@@ -236,7 +236,7 @@ You can use multiple properties in a single value:
   "profiles": {
     "story": {
       "fields": {
-        "customfield_10050": "{{project}}-{{epic_number}}"
+        "customfield_10050": "${project}-${epic_number}"
       }
     }
   }
@@ -259,8 +259,8 @@ Use properties in array elements:
     "fullstack": {
       "fields": {
         "components": [
-          { "id": "{{frontend_component}}" },
-          { "id": "{{backend_component}}" }
+          { "id": "${frontend_component}" },
+          { "id": "${backend_component}" }
         ]
       }
     }
@@ -281,13 +281,13 @@ Properties work seamlessly with profile inheritance:
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "{{default_priority}}" }
+        "priority": { "id": "${default_priority}" }
       }
     },
     "urgent": {
       "inherits": ["default"],
       "fields": {
-        "priority": { "id": "{{urgent_priority}}" }
+        "priority": { "id": "${urgent_priority}" }
       }
     }
   }
@@ -315,31 +315,31 @@ Properties work seamlessly with profile inheritance:
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "{{priority_normal}}" },
+        "priority": { "id": "${priority_normal}" },
         "labels": ["auto-created"]
       }
     },
     "bug": {
       "fields": {
         "issuetype": { "id": "10004" },
-        "priority": { "id": "{{priority_high}}" },
-        "assignee": { "id": "{{team_lead}}" },
+        "priority": { "id": "${priority_high}" },
+        "assignee": { "id": "${team_lead}" },
         "labels": ["bug"]
       }
     },
     "frontend-story": {
       "fields": {
         "issuetype": { "id": "10002" },
-        "components": [{ "id": "{{frontend_component}}" }],
-        "customfield_10050": "{{auth_epic}}",
+        "components": [{ "id": "${frontend_component}" }],
+        "customfield_10050": "${auth_epic}",
         "labels": ["frontend", "story"]
       }
     },
     "critical-bug": {
       "inherits": ["bug"],
       "fields": {
-        "priority": { "id": "{{priority_critical}}" },
-        "assignee": { "id": "{{team_lead}}" },
+        "priority": { "id": "${priority_critical}" },
+        "assignee": { "id": "${team_lead}" },
         "labels": ["critical", "urgent"]
       }
     }
@@ -352,7 +352,7 @@ Properties work seamlessly with profile inheritance:
 When tedlt processes your configuration:
 
 1. **Loading**: Properties are loaded from the `properties` object
-2. **Resolution**: All `{{property_name}}` references are replaced with their values
+2. **Resolution**: All `${property_name}` references are replaced with their values
 3. **Merging**: Profiles are merged (after property resolution)
 4. **Validation**: The final configuration is validated
 
@@ -367,7 +367,7 @@ Before resolution:
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{user}}" }
+        "assignee": { "id": "${user}" }
       }
     }
   }
@@ -486,7 +486,7 @@ When IDs or values change in Jira, update properties in one place:
 }
 ```
 
-All profiles using `{{team_lead}}` automatically get the new value.
+All profiles using `${team_lead}` automatically get the new value.
 
 ## Finding Property Values
 
@@ -540,14 +540,14 @@ tedlt info epics --project-key PROJ
 
 ### Property Not Being Replaced
 
-**Issue:** You see `{{property_name}}` in the created ticket instead of the value.
+**Issue:** You see `${property_name}` in the created ticket instead of the value.
 
-**Cause:** Property substitution happens during configuration loading. If you see the literal `{{...}}`, the property wasn't found.
+**Cause:** Property substitution happens during configuration loading. If you see the literal `${...}`, the property wasn't found.
 
 **Solution:** 
 1. Check property spelling
 2. Ensure the property exists in the `properties` object
-3. Verify you're using the correct syntax: `{{property_name}}`
+3. Verify you're using the correct syntax: `${property_name}`
 
 ### Testing Property Resolution
 
@@ -570,7 +570,7 @@ You cannot reference properties within property values:
 {
   "properties": {
     "base": "USER",
-    "user_id": "{{base}}123"
+    "user_id": "${base}123"
   }
 }
 ```

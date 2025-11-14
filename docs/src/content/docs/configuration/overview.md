@@ -17,17 +17,7 @@ tedlt reads configuration from multiple sources, applied in this priority order 
 
 ## Configuration File Location
 
-The configuration file is located at:
-
-- **Windows**: `C:\Users\YourName\.tedlt\config.json`
-- **macOS/Linux**: `~/.tedlt/config.json`
-
-You can also use `.jsonc` extension to add comments:
-
-```bash
-# Rename to enable comments
-mv ~/.tedlt/config.json ~/.tedlt/config.jsonc
-```
+The configuration file is located at: `~/tedlt.jsonc`
 
 ## Basic Structure
 
@@ -59,7 +49,7 @@ A full configuration with all features:
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "{{default_priority}}" },
+        "priority": { "id": "${default_priority}" },
         "labels": ["auto-created"]
       }
     },
@@ -113,7 +103,7 @@ Reusable variables for use in profiles.
 }
 ```
 
-Reference with `{{property_name}}` syntax. See [Property Templates](/tedlt/configuration/properties/).
+Reference with `${property_name}` syntax. See [Property Templates](/tedlt/configuration/properties/).
 
 ### `profiles`
 
@@ -139,8 +129,6 @@ Credentials are read from environment variables:
 
 - `JIRA_API_TOKEN`: Your Jira API token
 - `JIRA_EMAIL`: Your Jira account email
-
-These should **not** be in the config file for security reasons.
 
 ### Using .env Files
 
@@ -272,7 +260,7 @@ You can use different configuration files for different contexts:
 
 ### Per-Project Configuration
 
-Create a `.tedlt/config.json` in your project directory (feature not yet implemented, planned for future versions).
+Create a `tedlt.jsonc` in your project directory (feature not yet implemented, planned for future versions).
 
 Currently, use profiles to separate contexts:
 
@@ -290,57 +278,6 @@ Currently, use profiles to separate contexts:
   }
 }
 ```
-
-## Best Practices
-
-### Security
-
-- ✅ **DO** use environment variables or `.env` files for credentials
-- ❌ **DON'T** put API tokens in the config file
-- ✅ **DO** add `.env` to `.gitignore`
-- ✅ **DO** commit `.env.example` with dummy values
-
-### Organization
-
-- ✅ **DO** use the `default` profile for common settings
-- ✅ **DO** use property templates to avoid repetition
-- ✅ **DO** use descriptive profile names
-- ❌ **DON'T** duplicate settings across profiles
-
-### Maintainability
-
-- ✅ **DO** use comments (in `.jsonc` files) to document complex profiles
-- ✅ **DO** use profile inheritance to build on existing profiles
-- ✅ **DO** test profiles with `--verbose` flag
-- ❌ **DON'T** create deeply nested inheritance chains (3-4 levels max)
-
-## Validation
-
-tedlt validates your configuration when loading it. Common errors:
-
-### Invalid JSON Syntax
-
-```
-Error: Failed to parse config file: expected `,` at line 5
-```
-
-Check for missing commas, quotes, or brackets.
-
-### Missing Required Fields
-
-```
-Error: Profile 'bug' inherits from non-existent profile 'base'
-```
-
-Ensure all profiles referenced in `inherits` exist.
-
-### Circular Dependencies
-
-```
-Error: Circular dependency detected in profile inheritance: a -> b -> a
-```
-
-Remove circular inheritance chains.
 
 ## Next Steps
 

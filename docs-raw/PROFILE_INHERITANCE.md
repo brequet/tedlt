@@ -314,13 +314,13 @@ The `default` profile is special:
     },
     "frontend": {
       "fields": {
-        "components": [{ "id": "{{frontend_team_id}}" }],
+        "components": [{ "id": "${frontend_team_id}" }],
         "labels": ["frontend"]
       }
     },
     "backend": {
       "fields": {
-        "components": [{ "id": "{{backend_team_id}}" }],
+        "components": [{ "id": "${backend_team_id}" }],
         "labels": ["backend"]
       }
     },

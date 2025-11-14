@@ -95,7 +95,7 @@ This page provides a complete reference for all fields available in the tedlt co
 
 **Values:**
 - Must be strings
-- Referenced in profiles using `{{property_name}}` syntax
+- Referenced in profiles using `${property_name}` syntax
 
 **Example usage:**
 ```json
@@ -106,7 +106,7 @@ This page provides a complete reference for all fields available in the tedlt co
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{user_id}}" }
+        "assignee": { "id": "${user_id}" }
       }
     }
   }
@@ -688,7 +688,7 @@ Settings are applied in this order (highest to lowest priority):
 
 ## Property Template Syntax
 
-Properties use the `{{property_name}}` syntax.
+Properties use the `${property_name}` syntax.
 
 ### Definition
 
@@ -708,8 +708,8 @@ Properties use the `{{property_name}}` syntax.
   "profiles": {
     "bug": {
       "fields": {
-        "assignee": { "id": "{{team_lead}}" },
-        "components": [{ "id": "{{component}}" }]
+        "assignee": { "id": "${team_lead}" },
+        "components": [{ "id": "${component}" }]
       }
     }
   }
@@ -727,7 +727,7 @@ Properties use the `{{property_name}}` syntax.
   "profiles": {
     "story": {
       "fields": {
-        "customfield_10050": "{{project}}-{{epic_num}}"
+        "customfield_10050": "${project}-${epic_num}"
       }
     }
   }
@@ -836,8 +836,8 @@ Fix: Add the property to the `properties` object
     },
     "frontend": {
       "fields": {
-        "components": [{ "id": "{{frontend_component}}" }],
-        "assignee": { "id": "{{team_lead}}" }
+        "components": [{ "id": "${frontend_component}" }],
+        "assignee": { "id": "${team_lead}" }
       }
     }
   }

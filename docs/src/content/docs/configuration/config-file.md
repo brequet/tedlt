@@ -7,56 +7,11 @@ The configuration file stores your Jira instance details, default settings, and 
 
 ## File Location
 
-The configuration file is created by `tedlt init` at:
-
-- **Windows**: `C:\Users\YourName\.tedlt\config.json`
-- **macOS/Linux**: `~/.tedlt/config.json`
+The configuration file is created by `tedlt init` at: `~/tedlt.jsonc`.
 
 ## File Format
 
-The configuration file is JSON or JSONC (JSON with comments).
-
-### Using JSON
-
-```json
-{
-  "jira_url": "https://yourcompany.atlassian.net",
-  "project_key": "PROJ"
-}
-```
-
-### Using JSONC (with comments)
-
-Rename your file to `.jsonc` to enable comments:
-
-```bash
-# Linux/macOS
-mv ~/.tedlt/config.json ~/.tedlt/config.jsonc
-
-# Windows
-ren %USERPROFILE%\.tedlt\config.json config.jsonc
-```
-
-Then you can add comments:
-
-```jsonc
-{
-  // Your company's Jira instance
-  "jira_url": "https://yourcompany.atlassian.net",
-  
-  // Default project for all tickets
-  "project_key": "PROJ",
-  
-  "profiles": {
-    // Used for all bug reports
-    "bug": {
-      "fields": {
-        "issuetype": { "id": "10004" }
-      }
-    }
-  }
-}
-```
+The configuration file is JSONC (JSON with comments).
 
 ## Configuration Schema
 
@@ -66,8 +21,8 @@ Then you can add comments:
 {
   "jira_url": "string",
   "project_key": "string",
-  "properties": { },
-  "profiles": { }
+  "properties": {},
+  "profiles": {}
 }
 ```
 
@@ -88,13 +43,10 @@ All fields are optional, but `jira_url` and `project_key` are typically required
 ```
 
 **Valid formats:**
+
 - `https://yourcompany.atlassian.net`
 - `https://jira.yourcompany.com`
 - Any valid Jira base URL
-
-**Invalid formats:**
-- ❌ `yourcompany.atlassian.net` (missing `https://`)
-- ❌ `https://yourcompany.atlassian.net/` (trailing slash is OK but not needed)
 
 #### `project_key`
 
@@ -109,6 +61,7 @@ All fields are optional, but `jira_url` and `project_key` are typically required
 ```
 
 **Format:**
+
 - Usually 2-10 uppercase letters
 - Examples: `PROJ`, `KAN`, `DEV`, `MYTEAM`
 
@@ -123,12 +76,15 @@ All fields are optional, but `jira_url` and `project_key` are typically required
   "properties": {
     "team_lead": "USER123",
     "default_priority": "3",
-    "frontend_component": "10100"
+    "frontend_component": "10100",
+    "issueTypes": {
+      "story": 10001
+    }
   }
 }
 ```
 
-Properties are referenced in profiles using `{{property_name}}` syntax.
+Properties are referenced in profiles using `${property_name}` syntax. Nested properties are supported (e.g., `${issueTypes.story}`).
 
 See [Property Templates](/tedlt/configuration/properties/) for details.
 
@@ -141,9 +97,9 @@ See [Property Templates](/tedlt/configuration/properties/) for details.
 ```json
 {
   "profiles": {
-    "default": { },
-    "bug": { },
-    "feature": { }
+    "default": {},
+    "bug": {},
+    "feature": {}
   }
 }
 ```
@@ -163,7 +119,7 @@ Each profile can contain:
       "jira_url": "string",
       "project_key": "string",
       "inherits": ["profile1", "profile2"],
-      "fields": { }
+      "fields": {}
     }
   }
 }
@@ -216,6 +172,7 @@ Override the project key for this profile.
 Profiles are merged left-to-right. See [Profile Inheritance](/tedlt/configuration/inheritance/).
 
 **Restrictions:**
+
 - The `default` profile cannot have an `inherits` field
 - No circular dependencies allowed
 
@@ -278,13 +235,8 @@ Most structured fields use an object with an `id` property:
 {
   "fields": {
     "labels": ["bug", "critical"],
-    "components": [
-      { "id": "10100" },
-      { "id": "10101" }
-    ],
-    "fixVersions": [
-      { "id": "10200" }
-    ]
+    "components": [{ "id": "10100" }, { "id": "10101" }],
+    "fixVersions": [{ "id": "10200" }]
   }
 }
 ```
@@ -421,13 +373,13 @@ Then use it:
     },
     "frontend": {
       "fields": {
-        "components": [{ "id": "{{frontend_component}}" }],
+        "components": [{ "id": "${frontend_component}" }],
         "labels": ["frontend"]
       }
     },
     "backend": {
       "fields": {
-        "components": [{ "id": "{{backend_component}}" }],
+        "components": [{ "id": "${backend_component}" }],
         "labels": ["backend"]
       }
     }
@@ -509,13 +461,13 @@ Open the file in your favorite text editor:
 
 ```bash
 # Linux/macOS
-nano ~/.tedlt/config.json
-vim ~/.tedlt/config.json
-code ~/.tedlt/config.json
+nano ~/tedlt.jsonc
+vim ~/tedlt.jsonc
+code ~/tedlt.jsonc
 
 # Windows
-notepad %USERPROFILE%\.tedlt\config.json
-code %USERPROFILE%\.tedlt\config.json
+notepad %USERPROFILE%\tedlt.jsonc
+code %USERPROFILE%\tedlt.jsonc
 ```
 
 ### Using jq (Linux/macOS)
@@ -523,7 +475,7 @@ code %USERPROFILE%\.tedlt\config.json
 Add a new profile:
 
 ```bash
-cat ~/.tedlt/config.json | jq '.profiles.new_profile = {"fields": {"priority": {"id": "2"}}}' > ~/.tedlt/config.json
+cat ~/tedlt.jsonc | jq '.profiles.new_profile = {"fields": {"priority": {"id": "2"}}}' > ~/tedlt.jsonc
 ```
 
 ### Backup Before Editing
@@ -532,10 +484,10 @@ Always backup before making major changes:
 
 ```bash
 # Linux/macOS
-cp ~/.tedlt/config.json ~/.tedlt/config.json.backup
+cp ~/tedlt.jsonc ~/tedlt.jsonc.backup
 
 # Windows
-copy %USERPROFILE%\.tedlt\config.json %USERPROFILE%\.tedlt\config.json.backup
+copy %USERPROFILE%\tedlt.jsonc %USERPROFILE%\tedlt.jsonc.backup
 ```
 
 ## Validation
@@ -545,6 +497,7 @@ tedlt validates your configuration when loading it.
 ### Common Validation Errors
 
 **Invalid JSON syntax:**
+
 ```
 Error: Failed to parse config file: expected `,` at line 5
 ```
@@ -552,6 +505,7 @@ Error: Failed to parse config file: expected `,` at line 5
 Fix: Check for missing commas, quotes, or brackets.
 
 **Profile not found:**
+
 ```
 Error: Profile 'nonexistent' referenced in inherits but not defined
 ```
@@ -559,6 +513,7 @@ Error: Profile 'nonexistent' referenced in inherits but not defined
 Fix: Ensure all profiles in `inherits` arrays exist.
 
 **Circular dependency:**
+
 ```
 Error: Circular dependency detected: a -> b -> a
 ```
@@ -566,6 +521,7 @@ Error: Circular dependency detected: a -> b -> a
 Fix: Remove circular inheritance chains.
 
 **Default profile with inherits:**
+
 ```
 Error: Default profile cannot have 'inherits' field
 ```
@@ -581,6 +537,7 @@ tedlt create "Test" --profile bug --verbose
 ```
 
 This shows:
+
 - Which profiles are loaded
 - How they're merged
 - Final configuration values
