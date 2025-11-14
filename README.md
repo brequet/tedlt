@@ -4,6 +4,8 @@ A CLI tool to create Jira tickets from the command line with just a title.
 
 **"Everything is in the title"** - Create Jira tickets fast, without opening a browser.
 
+See complete documentation at: https://brequet.github.io/tedlt/.
+
 ## Features
 
 - 🚀 **Fast ticket creation** - Create tickets with a single command
