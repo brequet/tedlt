@@ -1,336 +1,145 @@
 ---
 title: Configuration File
-description: Detailed guide to the tedlt configuration file structure
+description: Managing your tedlt configuration file
 ---
 
-The configuration file stores your Jira instance details, default settings, and profile definitions. It's a JSON file located in your home directory.
+The configuration file stores your Jira instance details, default settings, and profile definitions.
 
 ## File Location
 
-The configuration file is created by `tedlt init` at: `~/tedlt.jsonc`.
+The configuration file is located at: `~/tedlt.jsonc`
 
 ## File Format
 
-The configuration file is JSONC (JSON with comments).
+The configuration file uses **JSONC** (JSON with Comments), which allows you to add comments for documentation:
 
-## Configuration Schema
-
-### Root Object
-
-```json
+```jsonc
 {
-  "jira_url": "string",
-  "project_key": "string",
-  "properties": {},
-  "profiles": {}
-}
-```
-
-All fields are optional, but `jira_url` and `project_key` are typically required for most operations.
-
-### Top-Level Fields
-
-#### `jira_url`
-
-**Type:** String  
-**Required:** No (but recommended)  
-**Description:** Your Jira instance URL.
-
-```json
-{
-  "jira_url": "https://yourcompany.atlassian.net"
-}
-```
-
-**Valid formats:**
-
-- `https://yourcompany.atlassian.net`
-- `https://jira.yourcompany.com`
-- Any valid Jira base URL
-
-#### `project_key`
-
-**Type:** String  
-**Required:** No (but recommended)  
-**Description:** Default project key for creating tickets.
-
-```json
-{
-  "project_key": "PROJ"
-}
-```
-
-**Format:**
-
-- Usually 2-10 uppercase letters
-- Examples: `PROJ`, `KAN`, `DEV`, `MYTEAM`
-
-#### `properties`
-
-**Type:** Object  
-**Required:** No  
-**Description:** Reusable variables for use in profiles.
-
-```json
-{
+  // Your Jira instance
+  "jira_url": "https://company.atlassian.net",
+  "project_key": "PROJ",
+  
+  // Reusable variables
   "properties": {
-    "team_lead": "USER123",
-    "default_priority": "3",
-    "frontend_component": "10100",
-    "issueTypes": {
-      "story": 10001
-    }
-  }
-}
-```
-
-Properties are referenced in profiles using `${property_name}` syntax. Nested properties are supported (e.g., `${issueTypes.story}`).
-
-See [Property Templates](/tedlt/configuration/properties/) for details.
-
-#### `profiles`
-
-**Type:** Object  
-**Required:** No  
-**Description:** Named configurations for different ticket types.
-
-```json
-{
-  "profiles": {
-    "default": {},
-    "bug": {},
-    "feature": {}
-  }
-}
-```
-
-See [Profiles](/tedlt/configuration/profiles/) for details.
-
-## Profile Structure
-
-Each profile can contain:
-
-### Profile Fields
-
-```json
-{
-  "profiles": {
-    "bug": {
-      "jira_url": "string",
-      "project_key": "string",
-      "inherits": ["profile1", "profile2"],
-      "fields": {}
-    }
-  }
-}
-```
-
-#### `jira_url` (in profile)
-
-Override the Jira URL for this profile.
-
-```json
-{
-  "profiles": {
-    "personal": {
-      "jira_url": "https://personal.atlassian.net",
-      "project_key": "PERSONAL"
-    }
-  }
-}
-```
-
-#### `project_key` (in profile)
-
-Override the project key for this profile.
-
-```json
-{
-  "profiles": {
-    "backend": {
-      "project_key": "BACKEND"
-    }
-  }
-}
-```
-
-#### `inherits`
-
-**Type:** Array of strings  
-**Description:** List of profiles to inherit from.
-
-```json
-{
-  "profiles": {
-    "bug-critical": {
-      "inherits": ["bug", "urgent"]
-    }
-  }
-}
-```
-
-Profiles are merged left-to-right. See [Profile Inheritance](/tedlt/configuration/inheritance/).
-
-**Restrictions:**
-
-- The `default` profile cannot have an `inherits` field
-- No circular dependencies allowed
-
-#### `fields`
-
-**Type:** Object  
-**Description:** Jira field values to include when creating tickets.
-
-```json
-{
+    "team_lead": "USER123"  // Updated quarterly
+  },
+  
   "profiles": {
     "bug": {
       "fields": {
-        "issuetype": { "id": "10004" },
-        "priority": { "id": "2" },
-        "labels": ["bug"],
-        "components": [{ "id": "10100" }],
-        "customfield_10050": "value"
+        "issuetype": { "id": "10004" }
       }
     }
   }
 }
 ```
 
-## Field Types
+## Creating the Configuration File
 
-Different Jira fields require different value formats.
+The easiest way to create a configuration file:
 
-### Simple Text Fields
+```bash
+tedlt init --jira-url https://company.atlassian.net --project-key PROJ
+```
+
+This creates a basic configuration file with your Jira URL and project key.
+
+## Basic Structure
+
+A minimal configuration:
 
 ```json
 {
-  "fields": {
-    "summary": "Ticket title",
-    "description": "Detailed description",
-    "customfield_10060": "Custom text value"
-  }
+  "jira_url": "https://company.atlassian.net",
+  "project_key": "PROJ"
 }
 ```
 
-Note: `summary` is set via the CLI title argument, not the config.
-
-### ID-Based Fields
-
-Most structured fields use an object with an `id` property:
+A complete configuration with all features:
 
 ```json
 {
-  "fields": {
-    "issuetype": { "id": "10004" },
-    "priority": { "id": "2" },
-    "assignee": { "id": "USER123" }
-  }
-}
-```
-
-### Array Fields
-
-```json
-{
-  "fields": {
-    "labels": ["bug", "critical"],
-    "components": [{ "id": "10100" }, { "id": "10101" }],
-    "fixVersions": [{ "id": "10200" }]
-  }
-}
-```
-
-### Nested Object Fields
-
-```json
-{
-  "fields": {
-    "customfield_10070": {
-      "value": "Option 1"
+  "jira_url": "https://company.atlassian.net",
+  "project_key": "MAIN",
+  
+  "properties": {
+    "team_lead": "USER123",
+    "default_priority": "3"
+  },
+  
+  "profiles": {
+    "default": {
+      "fields": {
+        "priority": { "id": "${default_priority}" },
+        "labels": ["auto-created"]
+      }
     },
-    "customfield_10071": {
-      "id": "10300",
-      "value": "Nested value"
+    "bug": {
+      "fields": {
+        "issuetype": { "id": "10004" },
+        "priority": { "id": "2" },
+        "labels": ["bug"]
+      }
     }
   }
 }
 ```
 
-### Epic Link
+See the [Configuration Schema](/tedlt/reference/config-schema/) for complete field definitions.
 
-Epic link field varies by Jira instance. Find the field name first:
+## Configuration Sections
+
+### Top-Level Fields
+
+- **`jira_url`** - Your Jira instance URL
+- **`project_key`** - Default project for creating tickets
+- **`properties`** - Reusable variables (see [Property Templates](/tedlt/configuration/properties/))
+- **`profiles`** - Named ticket templates (see [Profiles](/tedlt/configuration/profiles/))
+
+### Profile Fields
+
+Each profile can contain:
+
+- **`jira_url`** - Override Jira URL for this profile
+- **`project_key`** - Override project key for this profile
+- **`inherits`** - List of profiles to inherit from (see [Inheritance](/tedlt/configuration/inheritance/))
+- **`fields`** - Jira field values (issue type, priority, labels, etc.)
+
+See the [Configuration Schema](/tedlt/reference/config-schema/) for complete field reference and formats.
+
+## Finding Field Values
+
+Before configuring profiles, you need to find the correct field IDs.
+
+### Project Information
+
+```bash
+tedlt info project PROJ
+```
+
+This shows:
+- Issue type IDs and names
+- Component IDs and names
+- Version IDs and names
+- Project metadata
+
+### Available Fields
 
 ```bash
 tedlt info fields --project-key PROJ --issue-type 10001
 ```
 
-Then use it:
+This shows all available fields and their types for a specific issue type.
 
-```json
-{
-  "fields": {
-    "customfield_10050": "PROJ-100"
-  }
-}
+### Existing Tickets
+
+```bash
+tedlt info ticket PROJ-123
 ```
 
-## Common Field Examples
+Copy field values from a well-configured ticket into your profile.
 
-### Complete Bug Profile
-
-```json
-{
-  "profiles": {
-    "bug": {
-      "fields": {
-        "issuetype": { "id": "10004" },
-        "priority": { "id": "2" },
-        "labels": ["bug", "needs-triage"],
-        "components": [{ "id": "10100" }],
-        "assignee": { "id": "USER123" }
-      }
-    }
-  }
-}
-```
-
-### Story with Epic Link
-
-```json
-{
-  "profiles": {
-    "story": {
-      "fields": {
-        "issuetype": { "id": "10002" },
-        "priority": { "id": "3" },
-        "labels": ["story"],
-        "customfield_10050": "PROJ-100"
-      }
-    }
-  }
-}
-```
-
-### Task with Custom Fields
-
-```json
-{
-  "profiles": {
-    "task": {
-      "fields": {
-        "issuetype": { "id": "10001" },
-        "priority": { "id": "3" },
-        "labels": ["task"],
-        "customfield_10060": "Sprint 1",
-        "customfield_10061": { "value": "Team A" }
-      }
-    }
-  }
-}
-```
-
-## Complete Configuration Examples
+## Common Configuration Examples
 
 ### Simple Setup
 
@@ -366,11 +175,6 @@ Then use it:
     "backend_component": "10101"
   },
   "profiles": {
-    "default": {
-      "fields": {
-        "priority": { "id": "3" }
-      }
-    },
     "frontend": {
       "fields": {
         "components": [{ "id": "${frontend_component}" }],
@@ -391,14 +195,7 @@ Then use it:
 
 ```json
 {
-  "jira_url": "https://work.atlassian.net",
-  "project_key": "WORK",
   "profiles": {
-    "default": {
-      "fields": {
-        "priority": { "id": "3" }
-      }
-    },
     "work": {
       "jira_url": "https://work.atlassian.net",
       "project_key": "WORK",
@@ -426,20 +223,13 @@ Then use it:
   "profiles": {
     "default": {
       "fields": {
-        "priority": { "id": "3" },
-        "labels": ["auto-created"]
-      }
-    },
-    "bug-base": {
-      "fields": {
-        "issuetype": { "id": "10004" },
-        "labels": ["bug"]
+        "priority": { "id": "3" }
       }
     },
     "bug": {
-      "inherits": ["bug-base"],
       "fields": {
-        "priority": { "id": "2" }
+        "issuetype": { "id": "10004" },
+        "labels": ["bug"]
       }
     },
     "bug-critical": {
@@ -453,99 +243,12 @@ Then use it:
 }
 ```
 
-## Editing the Configuration File
-
-### Manual Editing
-
-Open the file in your favorite text editor:
-
-```bash
-# Linux/macOS
-nano ~/tedlt.jsonc
-vim ~/tedlt.jsonc
-code ~/tedlt.jsonc
-
-# Windows
-notepad %USERPROFILE%\tedlt.jsonc
-code %USERPROFILE%\tedlt.jsonc
-```
-
-### Using jq (Linux/macOS)
-
-Add a new profile:
-
-```bash
-cat ~/tedlt.jsonc | jq '.profiles.new_profile = {"fields": {"priority": {"id": "2"}}}' > ~/tedlt.jsonc
-```
-
-### Backup Before Editing
-
-Always backup before making major changes:
-
-```bash
-# Linux/macOS
-cp ~/tedlt.jsonc ~/tedlt.jsonc.backup
-
-# Windows
-copy %USERPROFILE%\tedlt.jsonc %USERPROFILE%\tedlt.jsonc.backup
-```
-
-## Validation
-
-tedlt validates your configuration when loading it.
-
-### Common Validation Errors
-
-**Invalid JSON syntax:**
-
-```
-Error: Failed to parse config file: expected `,` at line 5
-```
-
-Fix: Check for missing commas, quotes, or brackets.
-
-**Profile not found:**
-
-```
-Error: Profile 'nonexistent' referenced in inherits but not defined
-```
-
-Fix: Ensure all profiles in `inherits` arrays exist.
-
-**Circular dependency:**
-
-```
-Error: Circular dependency detected: a -> b -> a
-```
-
-Fix: Remove circular inheritance chains.
-
-**Default profile with inherits:**
-
-```
-Error: Default profile cannot have 'inherits' field
-```
-
-Fix: Remove the `inherits` field from the `default` profile.
-
-### Testing Your Configuration
-
-Test with verbose mode to see how configuration is resolved:
-
-```bash
-tedlt create "Test" --profile bug --verbose
-```
-
-This shows:
-
-- Which profiles are loaded
-- How they're merged
-- Final configuration values
-- API request payload
-
 ## Next Steps
 
-- **[Profiles](/tedlt/configuration/profiles/)** - Learn about profile configuration
-- **[Property Templates](/tedlt/configuration/properties/)** - Use variables
-- **[Profile Inheritance](/tedlt/configuration/inheritance/)** - Build complex configs
-- **[Configuration Schema](/tedlt/reference/config-schema/)** - Complete reference
+**Usage Guides:**
+- [Profiles](/tedlt/configuration/profiles/) - Learn about profile configuration
+- [Property Templates](/tedlt/configuration/properties/) - Use variables in profiles
+- [Profile Inheritance](/tedlt/configuration/inheritance/) - Build complex configurations
+
+**Reference:**
+- [Configuration Schema](/tedlt/reference/config-schema/) - Complete field reference and validation rules

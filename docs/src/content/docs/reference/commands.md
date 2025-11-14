@@ -17,13 +17,6 @@ Enable verbose logging to see detailed information about what tedlt is doing.
 tedlt create "Fix bug" --verbose
 ```
 
-Shows:
-- Configuration loading and resolution
-- Profile inheritance chains
-- Property template substitution
-- API requests and responses
-- Created ticket details
-
 ### `--jira-url`
 
 Override the Jira URL from the configuration file.
@@ -588,35 +581,9 @@ While not commands, these environment variables control tedlt's behavior:
 
 Your Jira API token for authentication.
 
-**Required**: Yes
-
-```bash
-export JIRA_API_TOKEN="your_token_here"
-```
-
-Generate at: https://id.atlassian.com/manage-profile/security/api-tokens
-
-### `JIRA_EMAIL`
-
-Your Jira account email address.
-
-**Required**: Yes
-
-```bash
-export JIRA_EMAIL="your.email@example.com"
-```
-
 See [Environment Variables](/tedlt/configuration/environment/) for more details.
 
 ---
-
-## Exit Codes
-
-tedlt uses standard exit codes:
-
-- **0**: Success
-- **1**: General error (configuration error, API error, etc.)
-- **2**: Command-line usage error
 
 ## Next Steps
 
