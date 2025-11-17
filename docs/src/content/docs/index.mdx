@@ -54,24 +54,82 @@ That's it. Your ticket is created.
 
 ## Quick Example
 
+**Without tedlt**: Open browser → Navigate to Jira → Click "Create" → Select project → Select issue type → Select component → Select fix version → Enter title → Click "Create"
+
+**With tedlt**: One command. That's it.
+
+### Your Configuration (`tedlt.jsonc`)
+
+```jsonc
+{
+  "jira_url": "https://acmecorp.atlassian.net",
+  "project_key": "SHOP",
+  "properties": {
+    "defaultEpic": "SHOP-42",        // Shopping Cart Epic
+    "defaultVersion": "10523",       // Q1 2024 Release
+    "issueTypes": {
+      "story": "10001",
+      "bug": "10004",
+      "task": "10002"
+    }
+  },
+  "profiles": {
+    "default": { // Default profile applied to all tickets
+      "fields": {
+        "parent": { "id": "${defaultEpic}" },
+        "fixVersions": [{ "id": "${defaultVersion}" }],
+        "issuetype": { "id": "${issueTypes.story}" }
+      }
+    },
+    "backend": {
+      "fields": {
+        "components": [{ "id": "11001" }]  // Backend Component
+      }
+    },
+    "frontend": {
+      "fields": {
+        "components": [{ "id": "11002" }]  // Frontend Component
+      }
+    },
+    "bug": {
+      "fields": {
+        "issuetype": { "id": "${issueTypes.bug}" },
+        "priority": { "id": "3" }  // High priority
+      }
+    }
+  }
+}
+```
+
+### Create Tickets Instantly
+
 ```sh
-# Create a simple ticket
-tedlt create "Update documentation"
+# Simple story - uses default profile
+tedlt create "Add shopping cart checkout button"
+# ✓ Created SHOP-156 (Story, under SHOP-42, targeted for Q1 2024)
 
-# Create a bug with the 'bug' profile
-tedlt create "Fix null pointer exception" --profile bug
+# Backend bug - combines 'bug' + 'backend' profiles
+tedlt create "Payment API timeout" --profile bug --profile backend
+# ✓ Created SHOP-157 (Bug, Backend component, High priority)
+```
 
-# Create a critical bug (inherits from bug profile + adds urgency)
-tedlt create "Production outage" --profile bug-critical
+### Discover Your Jira Setup
 
-# Create a task for on another board (multiple profiles supported)
-tedlt create "Design new feature" --profile proj2 --profile task
+```sh
+# Find project details, components, issue types, and versions
+tedlt info project SHOP
 
-# Discover project information
-tedlt info project MYPROJ
+# List epics in your project to find the right parent
+tedlt info epics --project-key SHOP
 
-# View ticket details
-tedlt info ticket MYPROJ-123
+# Inspect a ticket to see its raw JSON structure, useful for creating profiles from existing tickets
+tedlt info ticket SHOP-123
+
+# List available boards
+tedlt info boards --project SHOP
+
+# View available fields for a specific issue type
+tedlt info fields --project-key SHOP --issue-type 10001
 ```
 
 ## How It Works
