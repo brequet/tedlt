@@ -21,19 +21,6 @@ See complete documentation at: https://brequet.github.io/tedlt/.
 
 Download the latest release for your platform from the [releases page](https://github.com/brequet/tedlt/releases/latest).
 
-### Setup
-
-1. Create a `.env` file with your Jira credentials:
-   ```bash
-   JIRA_API_TOKEN=your_api_token_here
-   JIRA_EMAIL=your.email@example.com
-   ```
-
-2. Initialize configuration:
-   ```bash
-   tedlt init
-   ```
-
 ### Usage
 
 Create a ticket:
@@ -55,41 +42,43 @@ tedlt info project PROJ
 
 📚 **[Full Documentation](https://brequet.github.io/tedlt/)**
 
-- [Installation Guide](https://brequet.github.io/tedlt/getting-started/installation/)
-- [Quick Start](https://brequet.github.io/tedlt/getting-started/quick-start/)
-- [Configuration](https://brequet.github.io/tedlt/configuration/overview/)
-- [CLI Reference](https://brequet.github.io/tedlt/reference/commands/)
-
 ## Example Configuration
 
 ```jsonc
 {
-  "jira_url": "https://yourcompany.atlassian.net",
-  "project_key": "PROJ",
-  
+  "jira_url": "https://acmecorp.atlassian.net",
+  "project_key": "SHOP",
   "properties": {
-    "team_lead": "USER123",
-    "default_priority": "3"
+    "defaultEpic": "SHOP-42",        // Shopping Cart Epic
+    "defaultVersion": "10523",       // Q1 2024 Release
+    "issueTypes": {
+      "story": "10001",
+      "bug": "10004",
+      "task": "10002"
+    }
   },
-  
   "profiles": {
-    "default": {
+    "default": { // Default profile applied to all tickets
       "fields": {
-        "priority": { "id": "{{default_priority}}" },
-        "labels": ["auto-created"]
+        "parent": { "id": "${defaultEpic}" },
+        "fixVersions": [{ "id": "${defaultVersion}" }],
+        "issuetype": { "id": "${issueTypes.story}" }
+      }
+    },
+    "backend": {
+      "fields": {
+        "components": [{ "id": "11001" }]  // Backend Component
+      }
+    },
+    "frontend": {
+      "fields": {
+        "components": [{ "id": "11002" }]  // Frontend Component
       }
     },
     "bug": {
       "fields": {
-        "issuetype": { "id": "10004" },
-        "labels": ["bug"]
-      }
-    },
-    "bug-critical": {
-      "inherits": ["bug"],
-      "fields": {
-        "priority": { "id": "1" },
-        "labels": ["urgent"]
+        "issuetype": { "id": "${issueTypes.bug}" },
+        "priority": { "id": "3" }  // High priority
       }
     }
   }
